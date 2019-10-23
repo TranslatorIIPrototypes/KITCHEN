@@ -37,3 +37,28 @@ class DIaSUtils:
         """Merges a list of data elements using the separator provided.
         """
         pass
+
+    def __init__(self, data_row):
+        """Class constructor.
+        """
+        pass
+
+    def add_element(self, name, value):
+        """Adds a data element to the data row
+        """
+        pass
+
+    def convert_to_type(data_value):
+        """Converts a string to the desired data type
+        """
+        pass
+
+    def make_hyper_edge(self, elements):
+        """Creates a unique hyper edge ID from the data passed in.
+        """
+        pass
+
+    def merge_elements(self, elements, delimiter):
+        """Merges a list of data elements using the separator provided.
+        """
+        pass

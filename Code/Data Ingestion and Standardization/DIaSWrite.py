@@ -30,3 +30,21 @@ class DIaSWrite:
         """Makes a KNode object from the data row passed in.
         """
         pass
+
+    def __init__(self, data_def):
+        """Class constructor.
+        """
+        pass
+
+    def transform(self, data_row):
+        pass
+
+    def make_edge(self, edge_data):
+        """Makes a KEdge object from the data row passed in.
+        """
+        pass
+
+    def make_node(self, node_data):
+        """Makes a KNode object from the data row passed in.
+        """
+        pass

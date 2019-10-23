@@ -37,3 +37,23 @@ class DiaSRead:
         """Validates the data element.
         """
         pass
+
+    def __init__(self, data_def):
+        """Class constructor
+        """
+        pass
+
+    def validate_elements_def(self, data_header):
+        """Validates the data header definition.
+        """
+        pass
+
+    def validate_data_row(self, data_row):
+        """Validates the properties of a data row.
+        """
+        pass
+
+    def validate_data_element(self, element_name, element_value):
+        """Validates the data element.
+        """
+        pass
