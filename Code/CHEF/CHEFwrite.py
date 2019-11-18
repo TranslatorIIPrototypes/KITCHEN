@@ -21,23 +21,19 @@ class CHEFwrite:
     _data_def = None
 
     def __init__(self, data_def):
-        """Class constructor.
-        """
+        """ Class constructor. """
         self._data_def = data_def
 
         pass
 
     def transform(self, data_row):
-        """Transforms the data row into the appropriate node-edge-node layout
-        """
+        """ Transforms the data row into the appropriate node-edge-node layout """
         pass
 
     def make_edge(self, edge_data):
-        """Makes a KEdge object from the data row passed in.
-        """
+        """ Makes a KEdge object from the data row passed in. """
         pass
 
     def make_node(self, node_data):
-        """Makes a KNode object from the data row passed in.
-        """
+        """ Makes a KNode object from the data row passed in. """
         pass

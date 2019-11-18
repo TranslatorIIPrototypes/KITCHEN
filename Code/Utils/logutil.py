@@ -7,10 +7,14 @@ class LoggingUtil(object):
 
     @staticmethod
     def init_logging(name, level=logging.INFO, format_sel='short', log_file_path=None, log_file_level=None):
+        # get a logger
         logger = logging.getLogger(__name__)
+
+        # returns a new logger if its not the root
         if not logger.parent.name == 'root':
             return logger
 
+        # define the output types
         format_types = {
             "short": '%(funcName)s: %(message)s',
             "medium": '%(funcName)s: %(asctime)-15s %(message)s',

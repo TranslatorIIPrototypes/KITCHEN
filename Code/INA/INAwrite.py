@@ -21,13 +21,11 @@ class INAwrite:
     __data_def = None
 
     def __init__(self, data_def):
-        """Class constructor.
-        """
+        """ Class constructor. """
 
         self.__data_def = data_def
         pass
 
     def write_data_def(self):
-        """Writes out the data definition
-        """
+        """ Writes out the data definition """
         pass

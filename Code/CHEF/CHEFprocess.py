@@ -31,8 +31,7 @@ class CHEFProcess:
     _read = None
 
     def __init__(self, data_def):
-        """Class constructor.
-        """
+        """ Class constructor. """
         self._data_def = data_def
         self._utils = CHEFutils()
         self._write = CHEFwrite(data_def)
@@ -41,26 +40,21 @@ class CHEFProcess:
         pass
 
     def process(self):
-        """Main entry point to initiate the processing of the data.
-        """
+        """ Main entry point to initiate the processing of the data. """
         pass
 
     def process_file(self):
-        """Processes a data file.
-        """
+        """ Processes a data file. """
         pass
 
     def process_rdbms(self):
-        """Processes records in a relational database.
-        """
+        """ Processes records in a relational database. """
         pass
 
     def apply_output_rules(self, data_row):
-        """Applies the output rules to a data row.
-        """
+        """ Applies the output rules to a data row. """
         pass
 
     def generate_output_record(self, data_row):
-        """Generates a output record from a row of data (Node -> Edge -> Node).
-        """
+        """ Generates a output record from a row of data (Node -> Edge -> Node). """
         pass

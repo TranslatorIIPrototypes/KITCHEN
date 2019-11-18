@@ -20,14 +20,12 @@ class INAread:
     _data_def = None
 
     def __init__(self, data_def):
-        """Class constructor.
-        """
+        """ Class constructor. """
         self._data_def = data_def
         pass
 
     def get_data_conn(self) -> object:
-        """Creates and sets a connection to a RDBMS
-        """
+        """ Returns a connection to a RDBMS """
         # get connection string from the data source definition
         # init the return
         rv = {}
@@ -39,8 +37,7 @@ class INAread:
         return rv
 
     def get_file(self) -> str:
-        """Sets the data file details
-        """
+        """ Returns the data file location """
         # init the return
         rv = ''
 
@@ -53,8 +50,7 @@ class INAread:
         return rv
 
     def get_file_data_record_subset(self, record_limit: int = 5) -> dict:
-        """Returns a dict of data records from a file
-        """
+        """ Returns a dict of data records from a file """
         # init the return
         rv = {}
 
@@ -69,8 +65,7 @@ class INAread:
         return rv
 
     def get_rdbms_data_record_subset(self, record_limit: int = 5) -> dict:
-        """Returns a dict of data records from a rdbms
-        """
+        """ Returns a dict of data records from a rdbms """
         # init the return
         rv = {}
 
@@ -83,7 +78,7 @@ class INAread:
         return rv
 
     def execute(self) -> dict:
-        """ executes the sql statment """
+        """ Executes the sql statment """
         # init the return
         rv = {}
 
@@ -101,7 +96,7 @@ class INAread:
         return rv
 
     def get_sql_statement(self) -> str:
-        """ gets the sql statement from the data source definition"""
+        """ Gets the sql statement from the data source definition"""
         # init the return
         rv = ''
 
@@ -111,6 +106,5 @@ class INAread:
         return rv
 
     def get_data_record_iterator(self) -> dict:
-        """Returns a data record iterator
-        """
+        """ Returns a data record iterator """
         pass

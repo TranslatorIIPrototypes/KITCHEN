@@ -27,29 +27,23 @@ class INAutils:
         pass
 
     def construct_data_def(self, input_def: dict, output_def: dict) -> dict:
-        """Constructs a data definition file
-        """
+        """ Constructs a data definition file """
         pass
 
     def validate_data_def(self, data_def: dict) -> bool:
-        """Validates the data definition
-        """
+        """ Validates the data definition """
         pass
 
     def construct_input_def(self, col_def: dict) -> dict:
-        """Creates the input data definition given the results of the introspection.
-        """
+        """ Creates the input data definition given the results of the introspection. """
         pass
 
     def construct_output_def(self, col_def: dict) -> dict:
-        """Creates the output data definition given the results of the introspection.
-        """
+        """ Creates the output data definition given the results of the introspection. """
         pass
 
     def inspect_for_node_types(self, element: str) -> int:
-        """Calls a web service to determine if this data value can be associated to a
-        biomodel node type.
-        """
+        """ Calls a web service to determine if this data value can be associated to a biomodel node type. """
         # init the return value
         rv = None
 
@@ -65,9 +59,7 @@ class INAutils:
         return rv
 
     def inspect_for_edge_types(self, element: str) -> str:
-        """Calls a web service to determine if this data value can be associated to a
-        biomodel edge type.
-        """
+        """ Calls a web service to determine if this data value can be associated to a biomodel edge type. """
         # init the return value
         rv = None
 
@@ -83,9 +75,7 @@ class INAutils:
         return rv
 
     def inspect_for_edge_predicates(self, element: str) -> str:
-        """Calls a web service to determine if this data value can be associated to a
-        biomodel edge predicate.
-        """
+        """ Calls a web service to determine if this data value can be associated to a biomodel edge predicate. """
         # init the return
         rv = None
 
@@ -102,8 +92,7 @@ class INAutils:
 
     @staticmethod
     def get_node_types_from_ws(el: str) -> set:
-        """ get the node type from the web service
-        """
+        """ Returns the node type from the web service """
         # init the return
         rv = {}
 
@@ -115,8 +104,7 @@ class INAutils:
 
     @staticmethod
     def get_edge_predicates_from_ws(el: str) -> set:
-        """ gets the edge predicate from the web service
-        """
+        """ Returns the edge predicate from the web service """
         # init the return
         rv = {}
 
@@ -128,8 +116,7 @@ class INAutils:
 
     @staticmethod
     def get_edge_types_from_ws(el: str) -> set:
-        """ gets the edge type from the web service
-        """
+        """ Returns the edge type from the web service """
         # init the return
         rv = {}
 
@@ -141,8 +128,7 @@ class INAutils:
 
     @staticmethod
     def get_data_source_type(data_source: dict) -> int:
-        """ gets the type of data source (file, rdbms, etc.)
-        """
+        """ Returns the type of data source (file, rdbms, etc.) """
         # init the return
         rv = -1
 

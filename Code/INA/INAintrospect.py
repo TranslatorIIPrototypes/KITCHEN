@@ -18,7 +18,7 @@ logger = LoggingUtil.init_logging("INA.INAintrospect", logging.INFO, format_sel=
 
 
 class INAintrospect:
-    """Class: INA_introspect  By: Phil Owen Date: 10/23/2019 Description: A class that
+    """ Class: INA_introspect  By: Phil Owen Date: 10/23/2019 Description: A class that
     contains the main code to introspect a chemical structure data source.
     """
     # The output data definition
@@ -29,18 +29,16 @@ class INAintrospect:
     _utils = INAutils()
 
     def __init__(self, data_def):
-        """Class constructor
-        """
+        """ Class constructor """
         self._data_def = data_def
         self._write = INAwrite(data_def)
 
         pass
 
     def process(self) -> object:
-        """Entry point to launch data introspection
-        """
+        """ Entry point to launch data introspection """
         # init the return
-        rv = None
+        #rv = None
 
         try:
             # get the defined data sources
@@ -68,7 +66,7 @@ class INAintrospect:
 
                     # for each subsequent data record
                     for data_record in data_records[1:]:
-                        # scan the data record
+                        # scan the data record for keywords
                         record_analysis = self.scan_data(data_record)
 
                     # parse the analysis and produce a group of node-edge-node introspection
@@ -78,14 +76,24 @@ class INAintrospect:
 
         except Exception as e:
             logger.error(f'Exception caught. Exception: {e}')
-            rv = e
+            rv: Exception = e
 
         # return to the caller
         return rv
 
-    def introspect(self, data_row) -> dict:
-        """Initiates a scanning of a data row to determine node types and edge predicates
-        """
+    def introspect(self, header_analysis, record_analysis):
+        """ Looks over the data elements that were captured and assemble into a input data definition """
+        # init the return
+        rv = {}
+
+        # get a reference to the writer
+        self._write = INAwrite(self._data_def)
+
+        # return to the caller
+        return rv
+
+    def scan_data(self, data_row) -> dict:
+        """ Initiates a scanning of a data row to determine node types and edge predicates """
         # init the return
         rv = {}
 
@@ -107,8 +115,7 @@ class INAintrospect:
         return rv
 
     def process_file(self, data_source) -> dict:
-        """Processes a character delimited input file
-        """
+        """ Processes a character delimited input file """
         rv = {}
 
         # load the data file reader
@@ -121,8 +128,7 @@ class INAintrospect:
         return rv
 
     def process_rdbms(self, data_source) -> dict:
-        """Processes a relational database
-        """
+        """ Processes a relational database """
         # init the return
         rv = {}
 
@@ -136,7 +142,7 @@ class INAintrospect:
         return rv
 
     def get_data_sources(self) -> dict:
-        """ gets the data sources from the data definition """
+        """ Gets the data sources from the data definition """
         # init the return value
         rv = {}
 
