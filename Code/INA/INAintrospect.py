@@ -5,9 +5,17 @@
 # Original author: powen
 # 
 #######################################################
-from INA.INAutils import INAutils
+from Utils.INAutils import INAutils
 from INA.INAwrite import INAwrite
-from CHEF.CHEFread import CHEFread
+from INA.INAread import INAread
+
+import os
+import logging
+from Utils.logutil import LoggingUtil
+
+# create a class logger
+logger = LoggingUtil.init_logging("INA.INAintrospect", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+
 
 class INAintrospect:
     """Class: INA_introspect  By: Phil Owen Date: 10/23/2019 Description: A class that
@@ -20,7 +28,6 @@ class INAintrospect:
     # Reference to the ina utils class
     _utils = INAutils()
 
-
     def __init__(self, data_def):
         """Class constructor
         """
@@ -29,81 +36,54 @@ class INAintrospect:
 
         pass
 
-    def introspect(self):
+    def process(self) -> object:
         """Entry point to launch data introspection
         """
-        # get the data source type from the data definition
-        self._utils.get_data_source_type(self._data_def)
-
-        # if type is a data file
-            # data_records = self.process_file()
-        # else if type is a rdbms
-            # data_records = self.process_rdbms()
-
-        # for each data record
-            # if first record, grab the header column record
-                # scan the header for key words
-                # self.scan_data(header_row)
-
-                # scan the data record
-                # self.scan_data(data_row)
-
-       pass
-
-    def process_file(self) -> dict:
-        """Processes a character delimited input file
-        """
-        rv = {}
-
-        # load the data file reader
-        ch_rd = CHEFread(self._data_def)
-
-        # get the file list
-        #in_files = get_file_list()
-
-        # for each file declared
-            # set the file details
-            #ch_rd.set_file(in_file_path, in_file_name)
-
-            # get a subset of records that returns a dict for that file
-                #data_records = ch_rd.get_data_record_subset()
-
-        # return to caller
-        return rv
-
-    def process_rdbms(self) -> dict:
-        """Processes a relational database
-        """
         # init the return
-        rv = {}
+        rv = None
 
-        # create a data rdbms reader
-        ch_rd = CHEFread(self._data_def)
+        try:
+            # get the defined data sources
+            data_sources = self.get_data_sources()
 
-        # set connection to the data source
-        #ch_rd.set_data_conn()
+            # did we get any data sources
+            if data_sources is not None:
+                # for each data source
+                for data_source in data_sources:
+                    # get the data source type from the data definition
+                    data_type = self._utils.get_data_source_type(data_source)
 
-        # get the table (sql statement) list
-        # self.get_rdbms_list()
+                    # if type is a data file
+                    if data_type == self._utils.INAdata_source_type.FILE:
+                        data_records = self.process_file(data_source)
+                    # is it an rdbms
+                    elif data_type == self._utils.INAdata_source_type.RDBMS:
+                        data_records = self.process_rdbms(data_source)
+                    else:
+                        raise Exception('Invalid or missing data source type.')
 
-        # for each data table (sql statement) declared
-            # get a subset of records that return a dict for that table
-            #ch_rd.get_file_rdbms_record_subset()
+                    # scan the header for key words
+                    header_analysis = self.scan_data(data_records[0])
+                    record_analysis = {}
+
+                    # for each subsequent data record
+                    for data_record in data_records[1:]:
+                        # scan the data record
+                        record_analysis = self.scan_data(data_record)
+
+                    # parse the analysis and produce a group of node-edge-node introspection
+                    rv: dict = self.introspect(header_analysis, record_analysis)
+            else:
+                raise Exception('Missing data source.')
+
+        except Exception as e:
+            logger.error(f'Exception caught. Exception: {e}')
+            rv = e
 
         # return to the caller
         return rv
 
-    def get_file_list(self) -> dict:
-        """Gets a list of input files from the data definition"""
-
-        pass
-
-    def get_rdbms_list(self) -> dict:
-        """Gets a list of rdbms tables (sql statements) from the data definition"""
-
-        pass
-
-    def scan_data(self, data_row) -> dict:
+    def introspect(self, data_row) -> dict:
         """Initiates a scanning of a data row to determine node types and edge predicates
         """
         # init the return
@@ -122,6 +102,43 @@ class INAintrospect:
             # lookup the value to see if it is a edge predicate
             # if an edge predicate was found
                 # save the edge information
+
+        # return to the caller
+        return rv
+
+    def process_file(self, data_source) -> dict:
+        """Processes a character delimited input file
+        """
+        rv = {}
+
+        # load the data file reader
+        chef_rd = INAread(data_source)
+
+        # get a subset of records that returns a dict for that file
+        rv = chef_rd.get_file_data_record_subset()
+
+        # return to caller
+        return rv
+
+    def process_rdbms(self, data_source) -> dict:
+        """Processes a relational database
+        """
+        # init the return
+        rv = {}
+
+        # create a data rdbms reader
+        chef_rd = INAread(data_source)
+
+        # get a subset of records that return a dict for that table
+        rv = chef_rd.get_rdbms_data_record_subset()
+
+        # return to the caller
+        return rv
+
+    def get_data_sources(self) -> dict:
+        """ gets the data sources from the data definition """
+        # init the return value
+        rv = {}
 
         # return to the caller
         return rv

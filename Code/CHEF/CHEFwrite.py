@@ -5,6 +5,12 @@
 # Original author: powen
 # 
 #######################################################
+import os
+import logging
+from Utils.logutil import LoggingUtil
+
+# create a class logger
+logger = LoggingUtil.init_logging("CHEFwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class CHEFwrite:

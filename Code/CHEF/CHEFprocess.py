@@ -1,13 +1,20 @@
 #######################################################
 # 
-# CHEFProcess.py
+# CHEFprocess.py
 # Created on:      15-Nov-2019 11:15:27 AM
 # Original author: powen
 # 
 #######################################################
-from CHEF.CHEFutils import CHEFutils
+from Utils.CHEFutils import CHEFutils
 from CHEF.CHEFwrite import CHEFwrite
-from CHEF.CHEFread import CHEFread
+from INA.INAread import INAread
+
+import os
+import logging
+from Utils.logutil import LoggingUtil
+
+# create a class logger
+logger = LoggingUtil.init_logging("CHEFprocess", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class CHEFProcess:
@@ -29,7 +36,7 @@ class CHEFProcess:
         self._data_def = data_def
         self._utils = CHEFutils()
         self._write = CHEFwrite(data_def)
-        self._read = CHEFread(data_def)
+        self._read = INAread(data_def)
 
         pass
 

@@ -6,12 +6,23 @@
 # 
 #######################################################
 import shared.node_types as nt
+from enum import Enum
+
+import os
+import logging
+from Utils.logutil import LoggingUtil
+
+# create a class logger
+logger = LoggingUtil.init_logging("INAutils", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INAutils:
     """Class: INAutils  By: Phil Owen Date: 15-Nov-2019 Description: A class that has a
     number of utility functions for the INAintrospect class.
     """
+    # declare a data source type enum
+    INAdata_source_type = Enum('data_source_type', 'FILE RDBMS')
+
     def __init__(self):
         pass
 
@@ -129,10 +140,10 @@ class INAutils:
         return rv
 
     @staticmethod
-    def get_data_source_type(data_def: dict) -> int:
-        """ gets the type of target data source (file, rdbms, etc.)
+    def get_data_source_type(data_source: dict) -> int:
+        """ gets the type of data source (file, rdbms, etc.)
         """
-        # init the retrun
+        # init the return
         rv = -1
 
         # index into the data def to get the data source
