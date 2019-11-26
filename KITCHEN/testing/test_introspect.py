@@ -1,10 +1,15 @@
 import pytest
-from DataIntrospection.DIIntrospect import DIIntrospect
+from INA.INAintrospect import INAintrospect
 
-def test_introspect():
+def test_introspect_FILE():
+    # init the data definition
     data_def = None
 
-    di = DIIntrospect(data_def)
+    # create a new data daefintion for the test
 
+    # create the introspection object
+    di = INAintrospect(data_def)
+
+    # perform the introspection
     di.introspect()
 

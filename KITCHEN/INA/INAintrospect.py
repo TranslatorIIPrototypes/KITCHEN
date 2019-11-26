@@ -51,10 +51,11 @@ class INAintrospect:
                     # get the data source type from the data definition
                     data_type = self._utils.get_data_source_type(data_source)
 
-                    # if type is a data file
+                    # parse the data and get it into a standard format
+                    # if type is a textual data file
                     if data_type == self._utils.INAdata_source_type.FILE:
                         data_records = self.process_file(data_source)
-                    # is it an rdbms
+                    # else is it an rdbms
                     elif data_type == self._utils.INAdata_source_type.RDBMS:
                         data_records = self.process_rdbms(data_source)
                     else:
@@ -69,7 +70,7 @@ class INAintrospect:
                         # scan the data record for keywords
                         record_analysis = self.scan_data(data_record)
 
-                    # parse the analysis and produce a group of node-edge-node introspection
+                    # parse the analysis and produce a group of node-edge-node of the introspection
                     rv: dict = self.introspect(header_analysis, record_analysis)
             else:
                 raise Exception('Missing data source.')
@@ -85,6 +86,8 @@ class INAintrospect:
         """ Looks over the data elements that were captured and assemble into a input data definition """
         # init the return
         rv = {}
+
+        #
 
         # get a reference to the writer
         self._write = INAwrite(self._data_def)
