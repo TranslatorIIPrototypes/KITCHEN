@@ -7,7 +7,7 @@
 #######################################################
 import os
 import logging
-from Utils.logutil import LoggingUtil
+from Common.logutil import LoggingUtil
 
 # create a class logger
 logger = LoggingUtil.init_logging("INAwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')

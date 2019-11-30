@@ -5,13 +5,13 @@
 # Original author: powen
 # 
 #######################################################
-from Utils.CHEFutils import CHEFutils
+from Common.CHEFutils import CHEFutils
 from CHEF.CHEFwrite import CHEFwrite
 from INA.INAread import INAread
 
 import os
 import logging
-from Utils.logutil import LoggingUtil
+from Common.logutil import LoggingUtil
 
 # create a class logger
 logger = LoggingUtil.init_logging("CHEFprocess", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
