@@ -5,7 +5,7 @@
 # Original author: powen
 # 
 #######################################################
-from Utils.INAutils import INAutils
+from Common.INAutils import INAutils
 from INA.INAwrite import INAwrite
 from INA.INAread import INAread
 
