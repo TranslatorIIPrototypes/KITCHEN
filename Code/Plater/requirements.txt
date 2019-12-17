@@ -1,0 +1,3 @@
+git+https://github.com/NCATS-Tangerine/kgx@473eaa7078601e63e7d91aff2ccac208dc722f28
+kubernetes=10.0.1
+

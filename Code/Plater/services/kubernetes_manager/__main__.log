@@ -1,0 +1,5 @@
+Not Found
+Not Found
+Not Found
+Exception caught while checking if kpsi-build-9 was deployed : [x] {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"deployments.apps \"kpsi-build-9\" not found","reason":"NotFound","details":{"name":"kpsi-build-9","group":"apps","kind":"deployments"},"code":404}
+
