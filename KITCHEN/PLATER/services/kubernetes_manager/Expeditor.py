@@ -7,12 +7,12 @@
 #############################
 
 from kubernetes import client, config as k8_config
-from Code.Plater.logs.log import init_logger
-from Code.Plater.services.config import Config
+from KITCHEN.Common.logutil import LoggingUtil
+from KITCHEN.PLATER.services.config import Config
 from kubernetes.client.rest import ApiException
 import json
 
-logger = init_logger(__name__)
+logger = LoggingUtil.init_logging(__name__)
 
 
 class Expeditor:

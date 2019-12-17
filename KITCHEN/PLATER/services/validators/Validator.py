@@ -3,10 +3,9 @@
 # Validators should have validate class and constructor with no arguments.
 #
 ############
-from builtins import __function
 
-from Code.Plater.services.validators.KGX_validator import KGX_Validator
-from Code.Plater.logs.log import init_logger
+from KITCHEN.PLATER.services.validators.KGX_validator import KGX_Validator
+from KITCHEN.PLATER.logs import init_logger
 
 logger = init_logger(__name__)
 

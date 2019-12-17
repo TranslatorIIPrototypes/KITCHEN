@@ -1,6 +1,5 @@
 import pytest
-import json
-from Code.Plater.services.validators.KGX_validator import  KGX_Validator
+from KITCHEN.PLATER.services.validators.KGX_validator import  KGX_Validator
 import requests
 
 @pytest.fixture()

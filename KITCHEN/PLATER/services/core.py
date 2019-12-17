@@ -4,8 +4,8 @@
 #
 ####################
 
-from Code.Plater.services.validators.Validator import Validator
-from Code.Plater.services.config import Config
+from KITCHEN.PLATER.services.validators import Validator
+from KITCHEN.PLATER.services.config import Config
 
 
 

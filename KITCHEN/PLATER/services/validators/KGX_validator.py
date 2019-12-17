@@ -4,7 +4,7 @@
 ###########
 from kgx import  Validator
 
-from Code.Plater.logs.log import init_logger
+from KITCHEN.PLATER.logs import init_logger
 import logging
 from networkx import  DiGraph
 from kgx.json_transformer import JsonTransformer
