@@ -1,3 +1,4 @@
-git+https://github.com/NCATS-Tangerine/kgx@473eaa7078601e63e7d91aff2ccac208dc722f28
-kubernetes=10.0.1
-
+starlette==0.13.0
+pytest==5.3.2
+requests==2.22.0
+docker==4.1.0

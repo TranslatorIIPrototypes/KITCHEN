@@ -1,6 +1,6 @@
 ###############
 #  Configuration loader
-#  shamelessly borrowed from : https://github.com/NCATS-Gamma/robokop-interfaces/blob/master/greent/config.py
+#  Borrowed from : https://github.com/NCATS-Gamma/robokop-interfaces/blob/master/greent/config.py
 #
 ##################
 import os
@@ -8,7 +8,9 @@ import yaml
 import traceback
 import re
 
+
 class Config(dict):
+
     @staticmethod
     def get_resource_path(resource_name):
         """ Given a string resolve it to a module relative file path unless it is already an absolute path. """
@@ -31,6 +33,7 @@ class Config(dict):
         else:
             raise ValueError
         self.prefix = prefix
+
     def get_service (self, service):
         result = {}
         try:
@@ -38,17 +41,21 @@ class Config(dict):
         except:
             traceback.print_exc()
         return result
+
     def __setitem__(self, key, val):
         raise TypeError("Setting configuration is not allowed.")
+
     def __str__(self):
         return "Config with keys: "+', '.join(list(self.conf.keys()))
+
     def get(self, key, default=None):
         try:
             return self.__getitem__(key)
         except KeyError:
             return default
+
     def __getitem__(self, key):
-        '''
+        """
         Use this accessor instead of getting conf directly in order to permit overloading with environment variables.
         Imagine you have a config file of the form
 
@@ -58,17 +65,15 @@ class Config(dict):
 
         This will be overridden by an environment variable by the name of PERSON_ADDRESS_STREET,
         e.g. export PERSON_ADDRESS_STREET=Gregson
-        '''
-        key_var = re.sub('[\W]', '', key)
+        """
+        key_var = re.sub("[\\W]", '', key)
+
         name = self.prefix+'_'+key_var if self.prefix else key_var
-        #print(f"Config looking for {name}")
         try:
             env_name = name.upper()
-            #print ("IN ENVI")
             return os.environ[env_name]
         except KeyError:
             value = self.conf[key]
-            #print(f'GOT {value}')
             if isinstance(value, dict):
                 return Config(value, prefix=name)
             else:
