@@ -87,14 +87,26 @@ class GraphInterface:
         rows = response['results'][0]['data'][0]['row']
         return rows
 
+    def get_graph_schema(self):
+        query = """
+            match (a)-[x]->(b) with
+                filter(la in labels(a) where not la in ['named_thing', 'Concept']) as las,
+                filter(lb in labels(b) where not lb in ['named_thing', 'Concept']) as lbs,
+            type(x) as predicate
+            unwind las as la unwind lbs as lb
+            return distinct predicate, la, lb
+            """
+        result = self.driver.run(query)
+        records = [list(r) for r in result]
+        return records
 
 
 if __name__=="__main__":
-    graph_interface = GraphInterface('robokopdev.renci.org', 7474, ('neo4j', 'ncatsgamma'))
-    print(graph_interface.get_sample('chemical_substance')[0]['id'])
+    graph_interface = GraphInterface('localhost', 7474, ('neo4j', 'ncatsgamma'))
+    # print(graph_interface.get_sample('chemical_substance')[0]['id'])
     import json
-    print(json.dumps(graph_interface.get_single_hops(source_type='chemical_substance', target_type='chemical_substance', curie='CHEBI:15377')[:5], indent=2))
-
+    # print(json.dumps(graph_interface.get_single_hops(source_type='chemical_substance', target_type='chemical_substance', curie='CHEBI:15377')[:5], indent=2))
+    print(json.dumps(graph_interface.get_schema(), indent=4 ))
 
 
 
