@@ -10,12 +10,12 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("INAread", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("INA.INAread", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INAread:
     """Class: INAread By: Phil Owen Date: 15-Nov-2019 Description: A class that has a
-    number of functions focusing on reading data records for the processor classes.
+    number of functions focusing on reading data records for the INAintrospect and CHEFprocess classes.
     """
     _data_def = None
 

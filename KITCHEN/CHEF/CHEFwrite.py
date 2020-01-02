@@ -10,12 +10,12 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("CHEFwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("CHEF.CHEFwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class CHEFwrite:
     """Class: CHEFwrite  By: Phil Owen Date: 15-Nov-2019 Description: A class that has a
-    number of functions focusing on persisting records for the CHEFprocess class.
+    number of functions focusing on transforming (standardizing) the input data based on the INA RECIPE.
     """
     # The data definition
     _data_def = None
@@ -36,4 +36,8 @@ class CHEFwrite:
 
     def make_node(self, node_data):
         """ Makes a KNode object from the data row passed in. """
+        pass
+
+    def persist(self, node_data):
+        """ Persists the data. This generalized data set will be used by the COOKER """
         pass

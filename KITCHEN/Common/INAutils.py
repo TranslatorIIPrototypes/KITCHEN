@@ -13,7 +13,7 @@ import logging
 from Utils.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("KITCHEN.INA.INAutils", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("Common.INAutils", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INAutils:

@@ -10,22 +10,22 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("INAwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("INA.INAwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INAwrite:
     """Class: INAwrite  By: Phil Owen Date: 15-Nov-2019 Description: A class that has a
-    number of functions focusing on persisting records for the INAintrospect class.
+    number of functions focusing on creating a RECIPE definition for the INAintrospect class.
     """
-    # The data definition
-    __data_def = None
+    # The RECIPE data definition
+    _data_def = None
 
     def __init__(self, data_def):
         """ Class constructor. """
 
-        self.__data_def = data_def
+        self._data_def = data_def
         pass
 
-    def write_data_def(self):
-        """ Writes out the data definition """
+    def write_recipe_def(self):
+        """ Writes out the RECIPE data definition """
         pass

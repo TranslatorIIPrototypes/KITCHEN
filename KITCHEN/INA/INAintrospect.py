@@ -3,7 +3,12 @@
 # INAintrospect.py
 # Created on:      15-Nov-2019 11:43:36 AM
 # Original author: powen
-# 
+#
+# IntrospectioN Analyzer (INA):
+#
+# Introspects on data sources, discovers entities and predicates, and writes a metadata file of Rules Ensuring
+# Compliance of Information Producing Entities (RECIPE) defining how to transform the data source
+# into a translator-compliant source.
 #######################################################
 from Common.INAutils import INAutils
 from INA.INAwrite import INAwrite
@@ -19,7 +24,7 @@ logger = LoggingUtil.init_logging("INA.INAintrospect", logging.INFO, format_sel=
 
 class INAintrospect:
     """ Class: INA_introspect  By: Phil Owen Date: 10/23/2019 Description: A class that
-    contains the main code to introspect a chemical structure data source.
+    contains code to introspect a chemical structure data source.
     """
     # The output data definition
     _data_def = None
@@ -38,7 +43,7 @@ class INAintrospect:
     def process(self) -> object:
         """ Entry point to launch data introspection """
         # init the return
-        #rv = None
+        rv = {}
 
         try:
             # get the defined data sources
@@ -86,8 +91,6 @@ class INAintrospect:
         """ Looks over the data elements that were captured and assemble into a input data definition """
         # init the return
         rv = {}
-
-        #
 
         # get a reference to the writer
         self._write = INAwrite(self._data_def)
