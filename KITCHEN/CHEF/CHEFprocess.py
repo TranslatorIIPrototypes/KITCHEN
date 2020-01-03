@@ -12,6 +12,7 @@
 from Common.CHEFutils import CHEFutils
 from CHEF.CHEFwrite import CHEFwrite
 from INA.INAread import INAread
+from Common.INAutils import INAutils, INADataSourceType
 
 import os
 import logging
@@ -36,7 +37,7 @@ class CHEFprocess:
     # Reference to the INA read class
     _read = None
 
-    def __init__(self, recipe_def, data_def):
+    def __init__(self, data_def, recipe_def):
         """ Class constructor. """
         self._data_def = data_def
         self._recipe_def = recipe_def
@@ -47,22 +48,43 @@ class CHEFprocess:
 
         pass
 
-    def process(self):
-        """ Main entry point to initiate the processing of the data. """
-        pass
+    def process(self) -> object:
+        """ Entry point to launch data introspection """
+        # init the return
+        rv = None
 
-    def process_file(self):
-        """ Processes a data file. """
-        pass
+        try:
+            # get the defined data sources from the data definition
+            data_sources = self._read.get_data_sources()
 
-    def process_rdbms(self):
-        """ Processes records in a relational database. """
-        pass
+            # did we get any data sources
+            if data_sources is not None:
+                # for each data source
+                for data_source in data_sources:
+                    # get a sampling of records from the data source
+                    data_records = self._read.get_records(data_source)
+
+                    # parse the data records and transform/persist it into a file
+                    rv: dict = self._write.transform(data_records)
+            else:
+                raise Exception('Missing data source.')
+
+        except Exception as e:
+            logger.error(f'Exception caught. Exception: {e}')
+            rv: Exception = e
+
+        # return to the caller
+        return rv
 
     def apply_output_rules(self, data_row):
         """ Applies the output rules to a data row. """
+        # init the return
+        rv = {}
         pass
 
     def generate_output_record(self, data_row):
         """ Generates a output record from a row of data (Node -> Edge -> Node) and persists it. """
+        # init the return
+        rv = {}
+
         pass

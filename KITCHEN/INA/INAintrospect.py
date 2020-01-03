@@ -4,10 +4,10 @@
 # Created on:      15-Nov-2019 11:43:36 AM
 # Original author: powen
 #
-# IntrospectioN Analyzer (INA):
+# Implementation of the IntrospectioN Analyzer (INA):
 #
-# Introspects on data sources, discovers entities and predicates, and writes a metadata file of Rules Ensuring
-# Compliance of Information Producing Entities (RECIPE) defining how to transform the data source
+# Introspects data sources to discover entities and predicates, creates a metadata object of Rules Ensuring
+# Compliance of Information Producing Entities (RECIPE) defining how to transform the data
 # into a translator-compliant source.
 #######################################################
 from Common.INAutils import INAutils
@@ -23,134 +23,159 @@ logger = LoggingUtil.init_logging("INA.INAintrospect", logging.INFO, format_sel=
 
 
 class INAintrospect:
-    """ Class: INA_introspect  By: Phil Owen Date: 10/23/2019 Description: A class that
-    contains code to introspect a chemical structure data source.
+    """ Class: INAintrospect  By: Phil Owen Date: 10/23/2019 Description: A class that
+    contains code to introspect a data source to determine node-edge-node relationships and properties.
     """
-    # The output data definition
-    _data_def = None
-    # Reference to the di write class
-    _write = None
-    # Reference to the ina utils class
-    _utils = INAutils()
+    # The input data definition (type, input location, etc.)
+    _data_def: dict = None
+    # Reference to the INA write class
+    _write: INAwrite = None
+    # Reference to the INA read class
+    _read: INAread = None
+    # Reference to the INA utils class
+    _utils: INAutils = INAutils()
 
-    def __init__(self, data_def):
+    def __init__(self, data_def: dict):
         """ Class constructor """
         self._data_def = data_def
+        self._read = INAread(data_def)
         self._write = INAwrite(data_def)
 
-        pass
-
-    def process(self) -> object:
+    def introspect(self) -> object:
         """ Entry point to launch data introspection """
         # init the return
-        rv = {}
+        rv: dict = None
 
         try:
-            # get the defined data sources
-            data_sources = self.get_data_sources()
+            # validate the data definition
+            if self._utils.validate_data_def(self._data_def):
+                # get the defined data sources from the data definition
+                data_sources: dict = self._read.get_data_sources()
 
-            # did we get any data sources
-            if data_sources is not None:
-                # for each data source
-                for data_source in data_sources:
-                    # get the data source type from the data definition
-                    data_type = self._utils.get_data_source_type(data_source)
+                # did we get any data sources
+                if data_sources is not None:
+                    # create a baseline object to store the data RECIPEs
+                    success: bool = self._write.create_parent_recipe()
 
-                    # parse the data and get it into a standard format
-                    # if type is a textual data file
-                    if data_type == self._utils.INAdata_source_type.FILE:
-                        data_records = self.process_file(data_source)
-                    # else is it an rdbms
-                    elif data_type == self._utils.INAdata_source_type.RDBMS:
-                        data_records = self.process_rdbms(data_source)
+                    # did it create ok
+                    if success:
+                        # for each data source
+                        for data_source in data_sources:
+                            # get a sampling of records from the data source, 1 row for the header names and a few of raw data
+                            data_records: list = self._read.get_records(data_source, 5)
+
+                            # check the return for errors
+                            if data_records is None:
+                                raise Exception('Error gathering data record(s).')
+
+                            # use Translator services to identify the nature of the header record elements
+                            header_analysis: dict = self.scan_header_record(data_records[0])
+
+                            # check the return for errors
+                            if header_analysis is None:
+                                raise Exception('Error analyzing header record.')
+                            else:
+                                # append the header introspection to the RECIPE
+                                success: bool = self._write.append_header_introspection(header_analysis)
+
+                                # check the return for errors
+                                if not success:
+                                    raise Exception('Error appending header introspection to RECIPE.')
+
+                            # init the data analysis results
+                            data_analysis: list = []
+
+                            # for each subsequent data record
+                            for data_record in data_records[1:]:
+                                # use Translator services to identify the nature of the data record elements
+                                result: dict = self.scan_data_record(data_record)
+
+                                # check the return for errors
+                                if result is None:
+                                    raise Exception('Error scanning data record.')
+                                else:
+                                    data_analysis.append(result)
+
+                            # append the data record introspection to the RECIPE
+                            success: bool = self._write.append_data_record_introspection(data_analysis)
+
+                            # check the return for errors
+                            if not success:
+                                raise Exception('Missing data source.')
                     else:
-                        raise Exception('Invalid or missing data source type.')
+                        raise Exception('Parent RECIPE object could not be created.')
+                else:
+                    raise Exception('Missing data source(s).')
 
-                    # scan the header for key words
-                    header_analysis = self.scan_data(data_records[0])
-                    record_analysis = {}
+                # get the completed RECIPE
+                rv: dict = self._write.get_final_recipe()
 
-                    # for each subsequent data record
-                    for data_record in data_records[1:]:
-                        # scan the data record for keywords
-                        record_analysis = self.scan_data(data_record)
-
-                    # parse the analysis and produce a group of node-edge-node of the introspection
-                    rv: dict = self.introspect(header_analysis, record_analysis)
+                # check for errors
+                if rv is None:
+                    raise Exception('Error creating final RECIPE definition object.')
             else:
-                raise Exception('Missing data source.')
+                raise Exception('Error validating data definition.')
 
         except Exception as e:
             logger.error(f'Exception caught. Exception: {e}')
-            rv: Exception = e
 
         # return to the caller
         return rv
 
-    def introspect(self, header_analysis, record_analysis):
-        """ Looks over the data elements that were captured and assemble into a input data definition """
+    def scan_header_record(self, header_record: dict) -> dict:
+        """ Initiates a scanning of a data header to identify node types and edge properties and predicates based on the column name """
         # init the return
-        rv = {}
+        rv: dict = {}
 
-        # get a reference to the writer
-        self._write = INAwrite(self._data_def)
+        # for each data element in the record
+        for element in header_record:
+            # lookup the value to see if a node type can be detected
+            nt = self._utils.inspect_for_node_type(element)
 
-        # return to the caller
-        return rv
-
-    def scan_data(self, data_row) -> dict:
-        """ Initiates a scanning of a data row to determine node types and edge predicates """
-        # init the return
-        rv = {}
-
-        # lookup the value to see if a node type can be detected
-        self._utils.inspect_for_node_types('')
-
-        # if node type was found
-            # is this a chemical substance node
+            # if node type was found
+                # is this a chemical substance node type
                 # save the node information as the source
             # else it must be some sort of target node
                 # save the node information as the target
 
-        # if edge type was found
-            # lookup the value to see if it is a edge predicate
-            # if an edge predicate was found
-                # save the edge information
+            epred = self._utils.inspect_for_edge_predicate(element)
+
+            # if an edge predicate type was found
+                # save the edge predicate information
+
+            eprop = self._utils.inspect_for_edge_property(element)
+
+            # if an edge property type was found
+                # save the edge property information
 
         # return to the caller
         return rv
 
-    def process_file(self, data_source) -> dict:
-        """ Processes a character delimited input file """
-        rv = {}
-
-        # load the data file reader
-        chef_rd = INAread(data_source)
-
-        # get a subset of records that returns a dict for that file
-        rv = chef_rd.get_file_data_record_subset()
-
-        # return to caller
-        return rv
-
-    def process_rdbms(self, data_source) -> dict:
-        """ Processes a relational database """
+    def scan_data_record(self, data_record: dict) -> dict:
+        """ Initiates a scanning of a data row to determine node types and edge predicates """
         # init the return
-        rv = {}
+        rv: dict = {}
 
-        # create a data rdbms reader
-        chef_rd = INAread(data_source)
+        # for each data element in the record
+        for element in data_record:
+            # lookup the value to see if a node type can be detected
+            nt: int = self._utils.inspect_for_node_type(element)
 
-        # get a subset of records that return a dict for that table
-        rv = chef_rd.get_rdbms_data_record_subset()
+            # if node type was found
+                # is this a chemical substance node type
+                # save the node information as the source
+            # else it must be some sort of target node
+                # save the node information as the target
 
-        # return to the caller
-        return rv
+            epred: str = self._utils.inspect_for_edge_predicate(element)
 
-    def get_data_sources(self) -> dict:
-        """ Gets the data sources from the data definition """
-        # init the return value
-        rv = {}
+            # if an edge predicate type was found
+                # save the edge predicate information
+
+            eprop: str = self._utils.inspect_for_edge_property(element)
+
+            # if an edge property type was found
+                # save the edge property information
 
         # return to the caller
         return rv
