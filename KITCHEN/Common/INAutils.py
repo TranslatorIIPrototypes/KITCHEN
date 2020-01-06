@@ -13,7 +13,7 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("Common.INAutils", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("KITCHEN.Common.INAutils", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INADataSourceType(Enum):
@@ -21,6 +21,14 @@ class INADataSourceType(Enum):
     FILE = 1
     RDBMS = 2
     WS = 3
+
+class INARDBMSType(Enum):
+    """ Class: INARDBMSType By: Phil Owen Date: 15-Nov-2019 Description: A RDBMS type enum """
+    SQLITE = 1
+    MSSQL = 2
+    ORACLE = 3
+    MYSQL = 4
+    POSTGRESQL = 5
 
 
 class INAutils:
@@ -118,3 +126,12 @@ class INAutils:
 
         # return to the caller
         return rv
+
+    @staticmethod
+    def output_intermediate_results(recipe: dict, location: object) -> object:
+        """ ouptuts the intermediate results to a file for inspection. """
+        # does the output directory exist
+        if not os.path.isdir(location):
+            ret_val = Exception("Directory does not exist. Aborting.")
+        else:
+            pass

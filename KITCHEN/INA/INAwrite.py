@@ -10,7 +10,7 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("INA.INAwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("KITCHEN.INA.INAwrite", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INAwrite:

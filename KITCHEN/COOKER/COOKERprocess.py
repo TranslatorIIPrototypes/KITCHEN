@@ -17,7 +17,7 @@ from Common.logutil import LoggingUtil
 
 
 # create a class logger
-logger = LoggingUtil.init_logging("COOKER.COOKERprocess", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("KITCHEN.COOKER.COOKERprocess", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class COOKERprocess:

@@ -5,7 +5,6 @@
 # Original author: powen
 # 
 #######################################################
-
 from Common.INAutils import INADataSourceType
 
 import os
@@ -13,7 +12,7 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("INA.INAread", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("KITCHEN.INA.INAread", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class INAread:
@@ -51,7 +50,7 @@ class INAread:
             rv = self.process_ws(data_source, record_limit)
         # capture unexpected data source type error
         else:
-            raise Exception('Invalid or missing data source type.')
+            raise Exception('Invalid or missing data source type. Aborting.')
 
         # return to the caller
         return rv
@@ -72,7 +71,7 @@ class INAread:
         rv: list = []
 
         # get a subset of records that return a dict for that table
-        rv = self.get_rdbms_data_record_subset(record_limit)
+        rv = self.get_rdbms_data_record_subset(data_source, record_limit)
 
         # return to the caller
         return rv
@@ -174,31 +173,31 @@ class INAread:
         # return to the caller
         return rv
 
-    def get_rdbms_data_record_subset(self, record_limit: int) -> list:
+    def get_rdbms_data_record_subset(self, data_source: dict, record_limit: int) -> list:
         """ Returns a dict of data records from a rdbms """
         # init the return
         rv: list = []
 
         # execute the sql statement
-        rv = self.execute()
+        rv = self.execute(data_source, record_limit)
 
         # check for errors
 
         # return to the caller
         return rv
 
-    def execute(self) -> dict:
+    def execute(self, data_source: dict, record_limit: int) -> list:
         """ Executes the sql statement """
         # init the return
-        rv: dict = {}
+        rv: list = []
 
         # get the connection to the rdbms
-        conn = self.get_data_conn()
+        conn = self.get_rdbms_conn(data_source)
 
         # get the sql statement
         sql = self.get_sql_statement()
 
-        # limit the records
+        # limit the record count
 
         # execute the sql
 

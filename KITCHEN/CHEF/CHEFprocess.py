@@ -19,7 +19,7 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("CHEF.CHEFprocess", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("KITCHEN.CHEF.CHEFprocess", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
 class CHEFprocess:
@@ -39,14 +39,12 @@ class CHEFprocess:
 
     def __init__(self, data_def, recipe_def):
         """ Class constructor. """
+        # The input data definition (type, input location, etc.)
         self._data_def = data_def
         self._recipe_def = recipe_def
-
         self._utils = CHEFutils()
         self._write = CHEFwrite(recipe_def)
         self._read = INAread(data_def)
-
-        pass
 
     def process(self) -> object:
         """ Entry point to launch data introspection """
@@ -67,11 +65,11 @@ class CHEFprocess:
                     # parse the data records and transform/persist it into a file
                     rv: dict = self._write.transform(data_records)
             else:
-                raise Exception('Missing data source.')
+                raise Exception('Missing data source. Aborting.')
 
         except Exception as e:
-            logger.error(f'Exception caught. Exception: {e}')
-            rv: Exception = e
+            logger.error(f'Exception caught. Aborting. Exception: {e}')
+            raise
 
         # return to the caller
         return rv

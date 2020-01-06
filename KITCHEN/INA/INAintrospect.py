@@ -19,11 +19,11 @@ import logging
 from Common.logutil import LoggingUtil
 
 # create a class logger
-logger = LoggingUtil.init_logging("INA.INAintrospect", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
+logger = LoggingUtil.init_logging("KITCHEN.INA.INAintrospect", logging.INFO, format_sel='medium', log_file_path=f'{os.environ["KITCHEN"]}/logs/')
 
 
-class INAintrospect:
-    """ Class: INAintrospect  By: Phil Owen Date: 10/23/2019 Description: A class that
+class INA_introspect:
+    """ Class: INA_introspect  By: Phil Owen Date: 10/23/2019 Description: A class that
     contains code to introspect a data source to determine node-edge-node relationships and properties.
     """
     # The input data definition (type, input location, etc.)
@@ -34,17 +34,20 @@ class INAintrospect:
     _read: INAread = None
     # Reference to the INA utils class
     _utils: INAutils = INAutils()
+    # file system path for intermediate text file output of the RECIPE object for inspection
+    _intermediate_out_path: str = None
 
-    def __init__(self, data_def: dict):
-        """ Class constructor """
+    def __init__(self, data_def: dict, intermediate_out_path: str = None):
+        """ Class constructor. populate all class members """
         self._data_def = data_def
         self._read = INAread(data_def)
         self._write = INAwrite(data_def)
+        self._intermediate_out_path = intermediate_out_path
 
-    def introspect(self) -> object:
+    def introspect(self) -> dict:
         """ Entry point to launch data introspection """
         # init the return
-        rv: dict = None
+        rv: dict = {}
 
         try:
             # validate the data definition
@@ -53,7 +56,7 @@ class INAintrospect:
                 data_sources: dict = self._read.get_data_sources()
 
                 # did we get any data sources
-                if data_sources is not None:
+                if data_sources is not None and len(data_sources) > 0:
                     # create a baseline object to store the data RECIPEs
                     success: bool = self._write.create_parent_recipe()
 
@@ -66,21 +69,21 @@ class INAintrospect:
 
                             # check the return for errors
                             if data_records is None:
-                                raise Exception('Error gathering data record(s).')
+                                raise Exception('Error gathering data record(s). Aborting.')  # TODO: add data_source details to this return
 
                             # use Translator services to identify the nature of the header record elements
                             header_analysis: dict = self.scan_header_record(data_records[0])
 
                             # check the return for errors
                             if header_analysis is None:
-                                raise Exception('Error analyzing header record.')
+                                raise Exception('Error analyzing header record. Aborting.') # TODO: add data_source details to this return
                             else:
                                 # append the header introspection to the RECIPE
                                 success: bool = self._write.append_header_introspection(header_analysis)
 
                                 # check the return for errors
                                 if not success:
-                                    raise Exception('Error appending header introspection to RECIPE.')
+                                    raise Exception('Error appending header record introspection. Aborting.') # TODO: add data_source details to this return
 
                             # init the data analysis results
                             data_analysis: list = []
@@ -92,7 +95,7 @@ class INAintrospect:
 
                                 # check the return for errors
                                 if result is None:
-                                    raise Exception('Error scanning data record.')
+                                    raise Exception('Error scanning data record. Aborting.') # TODO: add data_source details to this return
                                 else:
                                     data_analysis.append(result)
 
@@ -101,23 +104,32 @@ class INAintrospect:
 
                             # check the return for errors
                             if not success:
-                                raise Exception('Missing data source.')
+                                raise Exception('Error appending data record introspection. Aborting.') # TODO: add data_source and data record details to this return
                     else:
-                        raise Exception('Parent RECIPE object could not be created.')
+                        raise Exception('Error creating RECIPE object. Aborting.' ) # TODO: add data_sources details to this return
                 else:
-                    raise Exception('Missing data source(s).')
+                   raise Exception('Error missing data source(s). Aborting.') # TODO: add details to this return
 
                 # get the completed RECIPE
-                rv: dict = self._write.get_final_recipe()
+                rv = self._write.get_final_recipe()
 
                 # check for errors
                 if rv is None:
-                    raise Exception('Error creating final RECIPE definition object.')
+                    raise Exception('Error creating final RECIPE definition object. Aborting.')
             else:
-                raise Exception('Error validating data definition.')
+                raise Exception('Error validating data definition. Aborting.')
+
+            # are we to output the results to a file
+            if self._intermediate_out_path is not None and rv is not None:
+                success = self._utils.output_intermediate_results(rv, self._intermediate_out_path)
+
+                # check the return for errors
+                if not success:
+                    raise Exception('Error outputting intermediate introspection results. Aborting.')
 
         except Exception as e:
-            logger.error(f'Exception caught. Exception: {e}')
+            logger.exception(e)
+            raise
 
         # return to the caller
         return rv
