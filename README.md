@@ -1,2 +1,3 @@
-# KP-SI
-Knowledge Providers - Source integration prototype
+# KITCHEN
+
+KITCHEN: Knowledge In Translator-Compliant cHEmical Networks
