@@ -1,0 +1,12 @@
+{
+  "chemical_substance": {
+      "gene": [
+          "directly_interacts_with"
+      ]
+  },
+  "gene": {
+      "disease": [
+          "has_basis_in"
+      ]
+  }
+ }

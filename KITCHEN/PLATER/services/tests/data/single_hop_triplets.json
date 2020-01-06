@@ -1,0 +1,568 @@
+
+[
+  [
+    {
+      "greenhouse_gas": true,
+      "topical": true,
+      "inchikey": "XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+      "smiles": "[H+].[OH-]",
+      "biochemical_role": true,
+      "acid": true,
+      "id": "CHEBI:15377",
+      "molecular_formula": [
+        "H2O"
+      ],
+      "amphiprotic_solvent": true,
+      "inchi": "InChI=1S/H2O/h1H2",
+      "drugbank.categories": [
+        "Alkalies",
+        "Anions",
+        "Diluents",
+        "EENT Drugs, Miscellaneous",
+        "Electrolytes",
+        "Hydroxides",
+        "Ions",
+        "Irrigating Solutions",
+        "Miscellaneous Vasodilatating Agents",
+        "Other Miscellaneous Therapeutic Agents",
+        "Oxides",
+        "Oxygen Compounds"
+      ],
+      "Bronsted_acid": true,
+      "parenteral": false,
+      "name": "water",
+      "therapeutic_flag": false,
+      "monoisotopic_mass": "18.01056",
+      "drugbank.approved": true,
+      "eukaryotic_metabolite": true,
+      "solvent": true,
+      "iupac_name": "hydron;hydroxide",
+      "bacterial_metabolite": true,
+      "prodrug": "0",
+      "molecule_type": "Small molecule",
+      "role": true,
+      "Bronsted_base": true,
+      "protophilic_solvent": true,
+      "mass": "18.01530",
+      "mammalian_metabolite": true,
+      "molecular_weight": [
+        "18.0153"
+      ],
+      "molecule_properties": "{'acd_logd': '-1.38', 'acd_logp': '-1.38', 'acd_most_apka': None, 'acd_most_bpka': None, 'alogp': '-0.82', 'aromatic_rings': 0, 'full_molformula': 'H2O', 'full_mwt': '18.02', 'hba': 0, 'hba_lipinski': 1, 'hbd': 0, 'hbd_lipinski': 2, 'heavy_atoms': 1, 'molecular_species': None, 'mw_freebase': '18.02', 'mw_monoisotopic': '18.0106', 'num_lipinski_ro5_violations': 0, 'num_ro5_violations': 0, 'psa': '31.5', 'qed_weighted': '0.33', 'ro3_pass': 'Y', 'rtb': 0}",
+      "natural_product": "0",
+      "prokaryotic_metabolite": true,
+      "donor": true,
+      "metabolite": true,
+      "simple_smiles": "O",
+      "chebi.orig_smiles": "[H]O[H]",
+      "pubchem.orig_smiles": "[H+].[OH-]",
+      "animal_metabolite": true,
+      "charge": "0",
+      "mouse_metabolite": true,
+      "acceptor": true,
+      "fungal_metabolite": true,
+      "protic_solvent": true,
+      "equivalent_identifiers": [
+        "CHEMBL:CHEMBL1098659",
+        "HMDB:HMDB0002111",
+        "PUBCHEM:22247451",
+        "KEGG.COMPOUND:C00001",
+        "PUBCHEM:962",
+        "INCHIKEY:XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+        "UNII:059QF0KO0R",
+        "CHEBI:15377",
+        "MESH:D014867",
+        "DRUGBANK:DB09145"
+      ],
+      "Saccharomyces_cerevisiae_metabolite": true,
+      "application": true,
+      "polar_solvent": true,
+      "human_metabolite": true,
+      "chemical_role": true,
+      "withdrawn_flag": false,
+      "oral": false,
+      "Escherichia_coli_metabolite": true,
+      "base": true,
+      "biological_role": true
+    },
+    {
+      "predicate_id": "RO:0002434",
+      "relation_label": [
+        "interacts with"
+      ],
+      "edge_source": [
+        "hmdb.metabolite_to_enzyme"
+      ],
+      "ctime": [
+        1570740004.7439096
+      ],
+      "id": "75f5841ef80a6f1356562aebdae9ec65",
+      "source_database": [
+        "hmdb"
+      ],
+      "publications": [],
+      "relation": [
+        "RO:0002434"
+      ]
+    },
+    {
+      "name": "NEU1 protein",
+      "id": "UniProtKB:Q5JQI0",
+      "equivalent_identifiers": [
+        "UniProtKB:Q5JQI0"
+      ]
+    }
+  ],
+  [
+    {
+      "greenhouse_gas": true,
+      "topical": true,
+      "inchikey": "XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+      "smiles": "[H+].[OH-]",
+      "biochemical_role": true,
+      "acid": true,
+      "id": "CHEBI:15377",
+      "molecular_formula": [
+        "H2O"
+      ],
+      "amphiprotic_solvent": true,
+      "inchi": "InChI=1S/H2O/h1H2",
+      "drugbank.categories": [
+        "Alkalies",
+        "Anions",
+        "Diluents",
+        "EENT Drugs, Miscellaneous",
+        "Electrolytes",
+        "Hydroxides",
+        "Ions",
+        "Irrigating Solutions",
+        "Miscellaneous Vasodilatating Agents",
+        "Other Miscellaneous Therapeutic Agents",
+        "Oxides",
+        "Oxygen Compounds"
+      ],
+      "Bronsted_acid": true,
+      "parenteral": false,
+      "name": "water",
+      "therapeutic_flag": false,
+      "monoisotopic_mass": "18.01056",
+      "drugbank.approved": true,
+      "eukaryotic_metabolite": true,
+      "solvent": true,
+      "iupac_name": "hydron;hydroxide",
+      "bacterial_metabolite": true,
+      "prodrug": "0",
+      "molecule_type": "Small molecule",
+      "role": true,
+      "Bronsted_base": true,
+      "protophilic_solvent": true,
+      "mass": "18.01530",
+      "mammalian_metabolite": true,
+      "molecular_weight": [
+        "18.0153"
+      ],
+      "molecule_properties": "{'acd_logd': '-1.38', 'acd_logp': '-1.38', 'acd_most_apka': None, 'acd_most_bpka': None, 'alogp': '-0.82', 'aromatic_rings': 0, 'full_molformula': 'H2O', 'full_mwt': '18.02', 'hba': 0, 'hba_lipinski': 1, 'hbd': 0, 'hbd_lipinski': 2, 'heavy_atoms': 1, 'molecular_species': None, 'mw_freebase': '18.02', 'mw_monoisotopic': '18.0106', 'num_lipinski_ro5_violations': 0, 'num_ro5_violations': 0, 'psa': '31.5', 'qed_weighted': '0.33', 'ro3_pass': 'Y', 'rtb': 0}",
+      "natural_product": "0",
+      "prokaryotic_metabolite": true,
+      "donor": true,
+      "metabolite": true,
+      "simple_smiles": "O",
+      "chebi.orig_smiles": "[H]O[H]",
+      "pubchem.orig_smiles": "[H+].[OH-]",
+      "animal_metabolite": true,
+      "charge": "0",
+      "mouse_metabolite": true,
+      "acceptor": true,
+      "fungal_metabolite": true,
+      "protic_solvent": true,
+      "equivalent_identifiers": [
+        "CHEMBL:CHEMBL1098659",
+        "HMDB:HMDB0002111",
+        "PUBCHEM:22247451",
+        "KEGG.COMPOUND:C00001",
+        "PUBCHEM:962",
+        "INCHIKEY:XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+        "UNII:059QF0KO0R",
+        "CHEBI:15377",
+        "MESH:D014867",
+        "DRUGBANK:DB09145"
+      ],
+      "Saccharomyces_cerevisiae_metabolite": true,
+      "application": true,
+      "polar_solvent": true,
+      "human_metabolite": true,
+      "chemical_role": true,
+      "withdrawn_flag": false,
+      "oral": false,
+      "Escherichia_coli_metabolite": true,
+      "base": true,
+      "biological_role": true
+    },
+    {
+      "predicate_id": "RO:0002434",
+      "relation_label": [
+        "interacts with"
+      ],
+      "edge_source": [
+        "hmdb.metabolite_to_enzyme"
+      ],
+      "ctime": [
+        1570740004.7484286
+      ],
+      "id": "daec9cc764c7d5e3735ec956d36f615f",
+      "source_database": [
+        "hmdb"
+      ],
+      "publications": [],
+      "relation": [
+        "RO:0002434"
+      ]
+    },
+    {
+      "name": "NOS1 mutant",
+      "id": "UniProtKB:B3VK56",
+      "equivalent_identifiers": [
+        "UniProtKB:B3VK56"
+      ]
+    }
+  ],
+  [
+    {
+      "greenhouse_gas": true,
+      "topical": true,
+      "inchikey": "XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+      "smiles": "[H+].[OH-]",
+      "biochemical_role": true,
+      "acid": true,
+      "id": "CHEBI:15377",
+      "molecular_formula": [
+        "H2O"
+      ],
+      "amphiprotic_solvent": true,
+      "inchi": "InChI=1S/H2O/h1H2",
+      "drugbank.categories": [
+        "Alkalies",
+        "Anions",
+        "Diluents",
+        "EENT Drugs, Miscellaneous",
+        "Electrolytes",
+        "Hydroxides",
+        "Ions",
+        "Irrigating Solutions",
+        "Miscellaneous Vasodilatating Agents",
+        "Other Miscellaneous Therapeutic Agents",
+        "Oxides",
+        "Oxygen Compounds"
+      ],
+      "Bronsted_acid": true,
+      "parenteral": false,
+      "name": "water",
+      "therapeutic_flag": false,
+      "monoisotopic_mass": "18.01056",
+      "drugbank.approved": true,
+      "eukaryotic_metabolite": true,
+      "solvent": true,
+      "iupac_name": "hydron;hydroxide",
+      "bacterial_metabolite": true,
+      "prodrug": "0",
+      "molecule_type": "Small molecule",
+      "role": true,
+      "Bronsted_base": true,
+      "protophilic_solvent": true,
+      "mass": "18.01530",
+      "mammalian_metabolite": true,
+      "molecular_weight": [
+        "18.0153"
+      ],
+      "molecule_properties": "{'acd_logd': '-1.38', 'acd_logp': '-1.38', 'acd_most_apka': None, 'acd_most_bpka': None, 'alogp': '-0.82', 'aromatic_rings': 0, 'full_molformula': 'H2O', 'full_mwt': '18.02', 'hba': 0, 'hba_lipinski': 1, 'hbd': 0, 'hbd_lipinski': 2, 'heavy_atoms': 1, 'molecular_species': None, 'mw_freebase': '18.02', 'mw_monoisotopic': '18.0106', 'num_lipinski_ro5_violations': 0, 'num_ro5_violations': 0, 'psa': '31.5', 'qed_weighted': '0.33', 'ro3_pass': 'Y', 'rtb': 0}",
+      "natural_product": "0",
+      "prokaryotic_metabolite": true,
+      "donor": true,
+      "metabolite": true,
+      "simple_smiles": "O",
+      "chebi.orig_smiles": "[H]O[H]",
+      "pubchem.orig_smiles": "[H+].[OH-]",
+      "animal_metabolite": true,
+      "charge": "0",
+      "mouse_metabolite": true,
+      "acceptor": true,
+      "fungal_metabolite": true,
+      "protic_solvent": true,
+      "equivalent_identifiers": [
+        "CHEMBL:CHEMBL1098659",
+        "HMDB:HMDB0002111",
+        "PUBCHEM:22247451",
+        "KEGG.COMPOUND:C00001",
+        "PUBCHEM:962",
+        "INCHIKEY:XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+        "UNII:059QF0KO0R",
+        "CHEBI:15377",
+        "MESH:D014867",
+        "DRUGBANK:DB09145"
+      ],
+      "Saccharomyces_cerevisiae_metabolite": true,
+      "application": true,
+      "polar_solvent": true,
+      "human_metabolite": true,
+      "chemical_role": true,
+      "withdrawn_flag": false,
+      "oral": false,
+      "Escherichia_coli_metabolite": true,
+      "base": true,
+      "biological_role": true
+    },
+    {
+      "predicate_id": "RO:0002434",
+      "relation_label": [
+        "interacts with"
+      ],
+      "edge_source": [
+        "hmdb.metabolite_to_enzyme"
+      ],
+      "ctime": [
+        1570740004.747808
+      ],
+      "id": "0709876c021defda9a369452238c1550",
+      "source_database": [
+        "hmdb"
+      ],
+      "publications": [],
+      "relation": [
+        "RO:0002434"
+      ]
+    },
+    {
+      "name": "Ubiquitin carboxyl-terminal hydrolase",
+      "id": "UniProtKB:A6NJA2",
+      "equivalent_identifiers": [
+        "UniProtKB:A6NJA2"
+      ]
+    }
+  ],
+  [
+    {
+      "greenhouse_gas": true,
+      "topical": true,
+      "inchikey": "XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+      "smiles": "[H+].[OH-]",
+      "biochemical_role": true,
+      "acid": true,
+      "id": "CHEBI:15377",
+      "molecular_formula": [
+        "H2O"
+      ],
+      "amphiprotic_solvent": true,
+      "inchi": "InChI=1S/H2O/h1H2",
+      "drugbank.categories": [
+        "Alkalies",
+        "Anions",
+        "Diluents",
+        "EENT Drugs, Miscellaneous",
+        "Electrolytes",
+        "Hydroxides",
+        "Ions",
+        "Irrigating Solutions",
+        "Miscellaneous Vasodilatating Agents",
+        "Other Miscellaneous Therapeutic Agents",
+        "Oxides",
+        "Oxygen Compounds"
+      ],
+      "Bronsted_acid": true,
+      "parenteral": false,
+      "name": "water",
+      "therapeutic_flag": false,
+      "monoisotopic_mass": "18.01056",
+      "drugbank.approved": true,
+      "eukaryotic_metabolite": true,
+      "solvent": true,
+      "iupac_name": "hydron;hydroxide",
+      "bacterial_metabolite": true,
+      "prodrug": "0",
+      "molecule_type": "Small molecule",
+      "role": true,
+      "Bronsted_base": true,
+      "protophilic_solvent": true,
+      "mass": "18.01530",
+      "mammalian_metabolite": true,
+      "molecular_weight": [
+        "18.0153"
+      ],
+      "molecule_properties": "{'acd_logd': '-1.38', 'acd_logp': '-1.38', 'acd_most_apka': None, 'acd_most_bpka': None, 'alogp': '-0.82', 'aromatic_rings': 0, 'full_molformula': 'H2O', 'full_mwt': '18.02', 'hba': 0, 'hba_lipinski': 1, 'hbd': 0, 'hbd_lipinski': 2, 'heavy_atoms': 1, 'molecular_species': None, 'mw_freebase': '18.02', 'mw_monoisotopic': '18.0106', 'num_lipinski_ro5_violations': 0, 'num_ro5_violations': 0, 'psa': '31.5', 'qed_weighted': '0.33', 'ro3_pass': 'Y', 'rtb': 0}",
+      "natural_product": "0",
+      "prokaryotic_metabolite": true,
+      "donor": true,
+      "metabolite": true,
+      "simple_smiles": "O",
+      "chebi.orig_smiles": "[H]O[H]",
+      "pubchem.orig_smiles": "[H+].[OH-]",
+      "animal_metabolite": true,
+      "charge": "0",
+      "mouse_metabolite": true,
+      "acceptor": true,
+      "fungal_metabolite": true,
+      "protic_solvent": true,
+      "equivalent_identifiers": [
+        "CHEMBL:CHEMBL1098659",
+        "HMDB:HMDB0002111",
+        "PUBCHEM:22247451",
+        "KEGG.COMPOUND:C00001",
+        "PUBCHEM:962",
+        "INCHIKEY:XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+        "UNII:059QF0KO0R",
+        "CHEBI:15377",
+        "MESH:D014867",
+        "DRUGBANK:DB09145"
+      ],
+      "Saccharomyces_cerevisiae_metabolite": true,
+      "application": true,
+      "polar_solvent": true,
+      "human_metabolite": true,
+      "chemical_role": true,
+      "withdrawn_flag": false,
+      "oral": false,
+      "Escherichia_coli_metabolite": true,
+      "base": true,
+      "biological_role": true
+    },
+    {
+      "predicate_id": "RO:0002434",
+      "relation_label": [
+        "interacts with"
+      ],
+      "edge_source": [
+        "hmdb.metabolite_to_enzyme"
+      ],
+      "ctime": [
+        1570740004.7469726
+      ],
+      "id": "945b881d894cd28d4a1281e3f657b64c",
+      "source_database": [
+        "hmdb"
+      ],
+      "publications": [],
+      "relation": [
+        "RO:0002434"
+      ]
+    },
+    {
+      "name": "Ubiquitin carboxyl-terminal hydrolase",
+      "id": "UniProtKB:Q08AK7",
+      "equivalent_identifiers": [
+        "UniProtKB:Q08AK7"
+      ]
+    }
+  ],
+  [
+    {
+      "greenhouse_gas": true,
+      "topical": true,
+      "inchikey": "XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+      "smiles": "[H+].[OH-]",
+      "biochemical_role": true,
+      "acid": true,
+      "id": "CHEBI:15377",
+      "molecular_formula": [
+        "H2O"
+      ],
+      "amphiprotic_solvent": true,
+      "inchi": "InChI=1S/H2O/h1H2",
+      "drugbank.categories": [
+        "Alkalies",
+        "Anions",
+        "Diluents",
+        "EENT Drugs, Miscellaneous",
+        "Electrolytes",
+        "Hydroxides",
+        "Ions",
+        "Irrigating Solutions",
+        "Miscellaneous Vasodilatating Agents",
+        "Other Miscellaneous Therapeutic Agents",
+        "Oxides",
+        "Oxygen Compounds"
+      ],
+      "Bronsted_acid": true,
+      "parenteral": false,
+      "name": "water",
+      "therapeutic_flag": false,
+      "monoisotopic_mass": "18.01056",
+      "drugbank.approved": true,
+      "eukaryotic_metabolite": true,
+      "solvent": true,
+      "iupac_name": "hydron;hydroxide",
+      "bacterial_metabolite": true,
+      "prodrug": "0",
+      "molecule_type": "Small molecule",
+      "role": true,
+      "Bronsted_base": true,
+      "protophilic_solvent": true,
+      "mass": "18.01530",
+      "mammalian_metabolite": true,
+      "molecular_weight": [
+        "18.0153"
+      ],
+      "molecule_properties": "{'acd_logd': '-1.38', 'acd_logp': '-1.38', 'acd_most_apka': None, 'acd_most_bpka': None, 'alogp': '-0.82', 'aromatic_rings': 0, 'full_molformula': 'H2O', 'full_mwt': '18.02', 'hba': 0, 'hba_lipinski': 1, 'hbd': 0, 'hbd_lipinski': 2, 'heavy_atoms': 1, 'molecular_species': None, 'mw_freebase': '18.02', 'mw_monoisotopic': '18.0106', 'num_lipinski_ro5_violations': 0, 'num_ro5_violations': 0, 'psa': '31.5', 'qed_weighted': '0.33', 'ro3_pass': 'Y', 'rtb': 0}",
+      "natural_product": "0",
+      "prokaryotic_metabolite": true,
+      "donor": true,
+      "metabolite": true,
+      "simple_smiles": "O",
+      "chebi.orig_smiles": "[H]O[H]",
+      "pubchem.orig_smiles": "[H+].[OH-]",
+      "animal_metabolite": true,
+      "charge": "0",
+      "mouse_metabolite": true,
+      "acceptor": true,
+      "fungal_metabolite": true,
+      "protic_solvent": true,
+      "equivalent_identifiers": [
+        "CHEMBL:CHEMBL1098659",
+        "HMDB:HMDB0002111",
+        "PUBCHEM:22247451",
+        "KEGG.COMPOUND:C00001",
+        "PUBCHEM:962",
+        "INCHIKEY:XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+        "UNII:059QF0KO0R",
+        "CHEBI:15377",
+        "MESH:D014867",
+        "DRUGBANK:DB09145"
+      ],
+      "Saccharomyces_cerevisiae_metabolite": true,
+      "application": true,
+      "polar_solvent": true,
+      "human_metabolite": true,
+      "chemical_role": true,
+      "withdrawn_flag": false,
+      "oral": false,
+      "Escherichia_coli_metabolite": true,
+      "base": true,
+      "biological_role": true
+    },
+    {
+      "predicate_id": "RO:0002434",
+      "relation_label": [
+        "interacts with"
+      ],
+      "edge_source": [
+        "hmdb.metabolite_to_enzyme"
+      ],
+      "ctime": [
+        1570740004.7449656
+      ],
+      "id": "07f41ed35b99d1fa30a14b5ae760cefe",
+      "source_database": [
+        "hmdb"
+      ],
+      "publications": [],
+      "relation": [
+        "RO:0002434"
+      ]
+    },
+    {
+      "name": "ATPase, H+ transporting, lysosomal 14kDa, V1 subunit F",
+      "id": "UniProtKB:A4D1K0",
+      "equivalent_identifiers": [
+        "UniProtKB:A4D1K0"
+      ]
+    }
+  ]
+]
