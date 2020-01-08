@@ -1,5 +1,5 @@
 import pytest
-from KITCHEN.PLATER.services.validators.KGX_validator import  KGX_Validator
+from PLATER.services.validators.KGX_validator import KGX_Validator
 import requests
 
 @pytest.fixture()
@@ -12,8 +12,5 @@ def broken_kgx_graph():
     return requests.get('https://raw.githubusercontent.com/NCATS-Tangerine/kgx/master/examples/biogrid-fake.json').json()
 
 
-
-
-
 def test_kgx_invalid(kgx_validator, broken_kgx_graph):
-    assert kgx_validator.validate(broken_kgx_graph) == False
+    assert kgx_validator.validate(broken_kgx_graph) is False

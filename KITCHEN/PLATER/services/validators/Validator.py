@@ -4,10 +4,8 @@
 #
 ############
 
-from KITCHEN.PLATER.services.validators.KGX_validator import KGX_Validator
-from KITCHEN.PLATER.logs import init_logger
+from PLATER.services.validators.KGX_validator import KGX_Validator
 
-logger = init_logger(__name__)
 
 class Validator():
     def __init__(self):
@@ -22,7 +20,7 @@ class Validator():
             validator = self.lazy_loader.get(validator_name)()
             valid = validator.validate(kgx_dict)
             if not valid:
-                logger.error(f'validation via {validator_name} failed')
+                # logger.error(f'validation via {validator_name} failed')
                 break
         return valid
 
