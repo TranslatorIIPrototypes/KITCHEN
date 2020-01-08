@@ -6,7 +6,7 @@ class LoggingUtil(object):
     """ Logging utility controlling format and setting initial logging level """
 
     @staticmethod
-    def init_logging(name, level=logging.INFO, format_sel='short', log_file_path=None, log_file_level=None):
+    def init_logging(name, level=logging.INFO, format_sel='medium', log_file_path=None, log_file_level=None):
         # get a logger
         logger = logging.getLogger(__name__)
 
