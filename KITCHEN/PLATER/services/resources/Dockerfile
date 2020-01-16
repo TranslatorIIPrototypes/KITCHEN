@@ -5,7 +5,7 @@ ENV APOC_URI https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/dow
 
 RUN wget $APOC_URI \
     && mv apoc-3.5.0.2-all.jar /plugins
-
-RUN mkdir -p /data2/
+RUN mkdir -p /data/
+RUN
 
 CMD ["sh"]

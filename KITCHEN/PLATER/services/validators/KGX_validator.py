@@ -2,11 +2,15 @@
 # Adaptor for KGX Validator Class
 #
 ###########
-from kgx.validator import Validator
-from networkx import DiGraph
-from kgx.transformers.json_transformer import JsonTransformer
+from kgx import  Validator
 
-# logger = logging.getLogger(__name__)https://github.com/TranslatorIIPrototypes/kgx.git
+from KITCHEN.PLATER.logs import init_logger
+import logging
+from networkx import  DiGraph
+from kgx.json_transformer import JsonTransformer
+import json
+
+logger = init_logger(__name__, logging.DEBUG)
 
 
 class KGX_Validator():
@@ -14,7 +18,7 @@ class KGX_Validator():
     Wrapper class for KGX validator
     """
     def __init__(self):
-        # logger.debug('Init KGX_Validator')
+        logger.debug('Init KGX_Validator')
         self.validator = Validator()
         self.transformer = JsonTransformer()
 
@@ -26,17 +30,17 @@ class KGX_Validator():
         :return: boolean indicating validation pass
         """
 
-        # logger.debug(f'validating {json.dumps(kgx_dict, indent=2) }')
+        logger.debug(f'validating {json.dumps(kgx_dict, indent=2) }')
         valid = True
 
         try:
             # validate using kgx and check for errors and catch exceptions as errors too
             self.validator.validate(self._transform(kgx_dict))
             if len(self.validator.errors):
-                # logger.debug(f'validation failed due to errors - {self.validator.errors}')
+                logger.debug(f'validation failed due to errors - {self.validator.errors}')
                 valid = False
         except Exception as ex:
-            # logger.debug(f'validation failed due to exception - [x] - {ex}')
+            logger.debug(f'validation failed due to exception - [x] - {ex}')
             valid = False
 
         return valid
@@ -53,5 +57,4 @@ class KGX_Validator():
 
 
 if __name__ == '__main__':
-    pass
-    # logger.error('hi')
+    logger.error('hi')

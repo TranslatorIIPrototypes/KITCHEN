@@ -78,6 +78,3 @@ class Config(dict):
                 return Config(value, prefix=name)
             else:
                 return value
-
-
-config = Config('plater.conf')
