@@ -9,8 +9,8 @@ from PLATER.services.docker_interface import DockerInterface
 from PLATER.services.config import config
 from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
-from Common.logutil import LoggingUtil
-import logging
+from PLATER.services.util.logutil import LoggingUtil
+
 import uvicorn
 
 

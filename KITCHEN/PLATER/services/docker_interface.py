@@ -6,7 +6,7 @@ import io
 import tarfile
 import atexit
 
-from Common.logutil import LoggingUtil
+from PLATER.services.util.logutil import LoggingUtil
 from PLATER.services.config import config
 
 logger = LoggingUtil.init_logging(__name__,

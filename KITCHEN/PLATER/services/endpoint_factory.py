@@ -4,7 +4,7 @@ from starlette.routing import Route
 from starlette.applications import Starlette
 from starlette.schemas import SchemaGenerator
 from starlette.staticfiles import StaticFiles
-from jinja2 import Environment, PackageLoader, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
 
 from PLATER.services.util.graph_adapter import GraphInterface
