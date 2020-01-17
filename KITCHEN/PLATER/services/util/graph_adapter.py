@@ -120,7 +120,20 @@ class GraphInterface:
             """
             query = f"MATCH (c:{node_type}{{id: '{curie}'}}) return c"
             response = self.driver.run(query)
-            rows = response['results'][0]['data'][0]['row']
+
+            data = response.get('results',[{}])[0].get('data', [])
+            '''
+            data looks like 
+            [
+            {'row': [{...node data..}], 'meta': [{...}]},
+            {'row': [{...node data..}], 'meta': [{...}]},
+            {'row': [{...node data..}], 'meta': [{...}]}
+            ]            
+            '''
+            rows = []
+            if len(data):
+                from functools import reduce
+                rows = reduce(lambda x, y: x + y.get('row', []), data, [])
             return rows
 
         def get_single_hops(self, source_type, target_type, curie):
@@ -137,7 +150,6 @@ class GraphInterface:
             """
 
             query = f'MATCH (c:{source_type}{{id: \'{curie}\'}})-[e]->(b:{target_type}) return distinct c , e, b'
-            print(query)
             response = self.driver.run(query)
             rows = list(map(lambda data: data['row'], response['results'][0]['data']))
             return rows
@@ -183,9 +195,7 @@ class GraphInterface:
                 final = self.driver.convert_to_dict(response)
                 return final
             else:
-
                 query = f"MATCH ({source}:{source}) return {source} limit 1"
-                print(query)
                 response = self.run_cypher(query)
                 final = list(map(lambda node: node[source], self.driver.convert_to_dict(response)))
                 return final
@@ -202,14 +212,7 @@ class GraphInterface:
         return getattr(self.instance, item)
 
 if __name__=="__main__":
-    graph_interface = GraphInterface('localhost', 7474, ('neo4j', 'ncatsgamma'))
-    # print(graph_interface.get_sample('chemical_substance')[0]['id'])
+    graph_interface = GraphInterface('192.168.99.101', 7474, ('neo4j', 'pass'))
     import json
-    # print(json.dumps(graph_interface.get_single_hops(source_type='chemical_substance', target_type='chemical_substance', curie='CHEBI:15377')[:5], indent=2))
+    print(json.dumps(graph_interface.get_single_hops(source_type='chemical_substance', target_type='chemical_substance', curie='CHEBI:15377')[:5], indent=2))
     print(json.dumps(graph_interface.get_schema(), indent=4 ))
-
-
-
-
-    # print(len(graph_interface.get_schema()['results'][0]['data'][0]['row'][0]))
-

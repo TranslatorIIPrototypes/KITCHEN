@@ -9,9 +9,8 @@ def parse_args(args):
     if args.dump_file:
         settings['load'] = True
         settings['dump_file'] = args.dump_file
-    print(build_tag)
-    print(settings)
     plater = Plater(build_tag=build_tag, settings=settings)
+    plater.run_web_server()
 
 
 if __name__=='__main__':
@@ -30,8 +29,14 @@ if __name__=='__main__':
         '-d',
         '--dump_file',
         help='A neo4j dump file to load into the neo4j instance. If this is specified it will force create a new'
-             'container instance with the specified `build_tag`. It will DELETE existing builds.'
+             'container instance with the specified `build_tag`. This will DELETE existing builds.'
     )
+    # parser.add_argument(
+    #     '-s',
+    #     '--run_server',
+    #     help='Run webserver.'
+    # )
+
 
     args = parser.parse_args()
 

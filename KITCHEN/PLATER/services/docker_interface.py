@@ -18,7 +18,7 @@ logger = LoggingUtil.init_logging(__name__,
 
 class DockerInterface(DockerClient):
     def __init__(self, base_url: str, tls_dir: str = None, version: str = '1.35'):
-        logger.debug('[0] Initializing docker-client...')
+        logger.debug(f'[0] Initializing docker-client...connecting to {base_url}')
         kwargs = {
             'base_url': base_url,
             'version': version,

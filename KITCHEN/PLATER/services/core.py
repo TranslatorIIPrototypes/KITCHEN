@@ -7,8 +7,8 @@
 from PLATER.services.validators.Validator import Validator
 from PLATER.services.docker_interface import DockerInterface
 from PLATER.services.config import config
-# from PLATER.services.util.graph_adapter import GraphInterface
-# from PLATER.services.endpoint_factory import EndpointFactory
+from PLATER.services.util.graph_adapter import GraphInterface
+from PLATER.services.endpoint_factory import EndpointFactory
 from Common.logutil import LoggingUtil
 import logging
 import uvicorn
@@ -33,31 +33,28 @@ class Plater:
 
         self.build_tag = build_tag
 
-        # docker connection settings, if socket is set up with tls
-        # we will assume that cert.pem and key.pem files are iht the tls path
-        # and exist as such.
-
-        self.docker_interface = DockerInterface(
-            base_url=self.config.get('DOCKER_URL'),
-            tls_dir=self.config.get('DOCKER_TLS_FILES_PATH')
-        )
 
         # here we try to build and commit a container with build tag and the dump file already loaded.
         if self.settings.get('load'):
+        # docker connection settings, if socket is set up with tls
+        # we will assume that cert.pem and key.pem files are iht the tls path
+        # and exist as such.
+            self.docker_interface = DockerInterface(
+                base_url=self.config.get('DOCKER_URL'),
+                tls_dir=self.config.get('DOCKER_TLS_FILES_PATH')
+            )
             logger.debug(f"[0] Loading dump file {self.settings.get('dump_file')}")
             self.build_neo4j_image_with_dump()
 
-
-
-        # self.graph_adapter = GraphInterface(
-        #     self.config.get('NEO4J_HOST'),
-        #     self.config.get('NEO4J_HTTP_PORT'),
-        #     (
-        #         self.config.get('NEO4J_USERNAME'),
-        #         self.config.get('NEO4J_PASSWORD')
-        #     )
-        # )
-        # self.endpoint_factory = EndpointFactory(self.graph_adapter)
+        self.graph_adapter = GraphInterface(
+            self.config.get('NEO4J_HOST'),
+            self.config.get('NEO4J_HTTP_PORT'),
+            (
+                self.config.get('NEO4J_USERNAME'),
+                self.config.get('NEO4J_PASSWORD')
+            )
+        )
+        self.endpoint_factory = EndpointFactory(self.graph_adapter)
 
     def plate(self, kgx_dict: dict):
         """
@@ -90,9 +87,6 @@ class Plater:
 
     def build_neo4j_image_with_dump(self):
         docker_repository = 'new'
-
-
-
         # to keep track of images to delete
         image_ids_to_remove = []
 
@@ -100,8 +94,6 @@ class Plater:
         logger.debug(f'[x] Found old image {old_image.short_id}, ({old_image.labels})')
         image_ids_to_remove.append(old_image.id)
         self.docker_interface.images.remove(old_image.id)
-
-
 
         base_image = self.docker_interface.build_neo4j_image(self.build_tag)
         # get the image we just built
@@ -127,14 +119,12 @@ class Plater:
                                              dump_file_path=self.settings.get('dump_file'),
                                              neo4j_data_dir=neo4j_data_dir)
 
-
         # save image
         new_image = container.commit(
             repository=docker_repository,
             tag=self.build_tag,
             changes=f'ENV {neo4j_data_dir_env_var}'
         )
-
 
         # kill the committed container, and run new instance of the image
         # for our env to take full effect in configuring neo4j

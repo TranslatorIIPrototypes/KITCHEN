@@ -5,15 +5,4 @@ pytest==5.3.2
 requests==2.22.0
 starlette==0.13.0
 uvicorn==0.11.1
-
-
-#KGX updated version
-
-git+https://github.com/TranslatorIIPrototypes/kgx.git
-
-
-
-# Swagger  UI---
-# Default swagger UI lib doesn't have suport for starlette framework.
-# Till pull request is approved by owners of swagger-ui setting... use this?
-git+https://github.com/YaphetKG/swagger-ui-py.git
+swagger_ui_bundle

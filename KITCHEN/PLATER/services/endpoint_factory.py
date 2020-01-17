@@ -1,11 +1,13 @@
-from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 from starlette.routing import Route
 from starlette.applications import Starlette
 from starlette.schemas import SchemaGenerator
-from PLATER.services.util.graph_adapter import GraphInterface
+from starlette.staticfiles import StaticFiles
+from jinja2 import Environment, PackageLoader, FileSystemLoader
+from swagger_ui_bundle import swagger_ui_3_path
 
+from PLATER.services.util.graph_adapter import GraphInterface
 
 
 class EndpointFactory:
@@ -16,7 +18,8 @@ class EndpointFactory:
     NODE_ENDPOINT_TYPE = 'node'
     CYPHER_ENDPOINT_TYPE = 'cypher'
     OPEN_API_ENDPOINT_TYPE = 'open_api'
-    GRAPH_SCHEMA_ENDPOINT_TYPE='graph_schema'
+    GRAPH_SCHEMA_ENDPOINT_TYPE = 'graph_schema'
+    SWAGGER_UI_ENDPOINT = 'swagger_ui'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -25,7 +28,8 @@ class EndpointFactory:
             EndpointFactory.NODE_ENDPOINT_TYPE: lambda kwargs: self.create_node_endpoint(**kwargs),
             EndpointFactory.CYPHER_ENDPOINT_TYPE: lambda kwargs: self.create_cypher_endpoint(),
             EndpointFactory.OPEN_API_ENDPOINT_TYPE: lambda kwargs: self.create_open_api_schema_endpoint(),
-            EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint()
+            EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint(),
+            EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(),
         }
 
     def create_app(self):
@@ -90,11 +94,21 @@ class EndpointFactory:
             )
         )
 
+        # add swagger UI
+
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.SWAGGER_UI_ENDPOINT
+            )
+        )
+
         routes = list(map(lambda endpoint: endpoint, endpoints))
         app = Starlette(
             debug=True,
             routes=routes
         )
+        # mount swagger ui files
+        app.router.mount('/', app=StaticFiles(directory=f'{swagger_ui_3_path}'))
         return app
 
     def create_hop_endpoint(self, source_type, target_type):
@@ -256,7 +270,6 @@ class EndpointFactory:
             }
         }
 
-
         # adding cypher endpoint to openapi spec
 
         example_cypher = 'MATCH (c) return c limit 1'
@@ -296,7 +309,6 @@ class EndpointFactory:
             }
         }
 
-
         schemas = SchemaGenerator(
             {
                 "openapi": "3.0.0",
@@ -307,7 +319,7 @@ class EndpointFactory:
             }
         )
 
-        return Route('/swagger.json', schemas.OpenAPIResponse)
+        return Route('/openapi.yml', schemas.OpenAPIResponse)
 
     def create_graph_schema_endpoint(self):
         """
@@ -326,10 +338,31 @@ class EndpointFactory:
         :rtype: Callable
         """
         graph_interface = self.graph_interface
+
         async def get_handler(request):
             response = graph_interface.get_schema()
             return JSONResponse(response)
+
         return Route('/graph/schema', get_handler)
+
+    def create_swagger_ui_endpoint(self):
+        """
+
+       """
+        # build Swagger UI
+        env = Environment(
+            loader=FileSystemLoader(swagger_ui_3_path)
+        )
+        template = env.get_template('index.j2')
+        html_content = template.render(
+            title="Biolink Model Lookup",
+            openapi_spec_url="./openapi.yml",
+        )
+
+        async def swagger_doc_handler(request):
+            return HTMLResponse(content=html_content, media_type='text/html')
+
+        return Route('/apidocs', swagger_doc_handler)
 
     def create_endpoint(self, endpoint_type, **kwargs) -> Route:
         """
@@ -345,7 +378,3 @@ class EndpointFactory:
         if endpoint_router is None:
             raise TypeError(f"Unable to load endpoint type: {endpoint_type}")
         return endpoint_router(kwargs)
-
-
-
-
