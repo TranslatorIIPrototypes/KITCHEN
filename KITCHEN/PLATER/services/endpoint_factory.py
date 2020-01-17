@@ -1,11 +1,13 @@
-from starlette.endpoints import HTTPEndpoint
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 from starlette.routing import Route
 from starlette.applications import Starlette
 from starlette.schemas import SchemaGenerator
-from PLATER.services.util.graph_adapter import GraphInterface
+from starlette.staticfiles import StaticFiles
+from jinja2 import Environment, FileSystemLoader
+from swagger_ui_bundle import swagger_ui_3_path
 
+from PLATER.services.util.graph_adapter import GraphInterface
 
 
 class EndpointFactory:
@@ -16,7 +18,8 @@ class EndpointFactory:
     NODE_ENDPOINT_TYPE = 'node'
     CYPHER_ENDPOINT_TYPE = 'cypher'
     OPEN_API_ENDPOINT_TYPE = 'open_api'
-    GRAPH_SCHEMA_ENDPOINT_TYPE='graph_schema'
+    GRAPH_SCHEMA_ENDPOINT_TYPE = 'graph_schema'
+    SWAGGER_UI_ENDPOINT = 'swagger_ui'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -25,10 +28,16 @@ class EndpointFactory:
             EndpointFactory.NODE_ENDPOINT_TYPE: lambda kwargs: self.create_node_endpoint(**kwargs),
             EndpointFactory.CYPHER_ENDPOINT_TYPE: lambda kwargs: self.create_cypher_endpoint(),
             EndpointFactory.OPEN_API_ENDPOINT_TYPE: lambda kwargs: self.create_open_api_schema_endpoint(),
-            EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint()
+            EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint(),
+            EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(),
         }
 
     def create_app(self):
+        """
+        Creates a startlette web application, based on a neo4j backend.
+        :return: starlette web application.
+        :rtype: Starlette
+        """
         graph_schema = self.graph_interface.get_schema()
         # first create Hop endpoints
         endpoints = []
@@ -85,16 +94,32 @@ class EndpointFactory:
             )
         )
 
+        # add swagger UI
+
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.SWAGGER_UI_ENDPOINT
+            )
+        )
+
         routes = list(map(lambda endpoint: endpoint, endpoints))
         app = Starlette(
             debug=True,
             routes=routes
         )
+        # mount swagger ui files
+        app.router.mount('/', app=StaticFiles(directory=f'{swagger_ui_3_path}'))
         return app
 
     def create_hop_endpoint(self, source_type, target_type):
         """
-
+        Returns a Json endpoint for returning triplets for every related node types in the graph.
+        :param source_type: Source node type.
+        :type source_type: str
+        :param target_type: Target node type.
+        :type target_type: str
+        :return: A request handler callable.
+        :rtype: Callable
         """
         graph_interface = self.graph_interface
 
@@ -106,7 +131,13 @@ class EndpointFactory:
         return Route(f"/{source_type}/{target_type}/{{curie}}", get_handler)
 
     def create_node_endpoint(self, node_type):
-
+        """
+        Creates an endpoint handler that would return a node.
+        :param node_type: Node type.
+        :type node_type: str
+        :return: A request handler callable.
+        :rtype: Callable
+        """
         graph_interface = self.graph_interface
 
         async def get_handler(request: Request) -> JSONResponse:
@@ -118,7 +149,9 @@ class EndpointFactory:
 
     def create_cypher_endpoint(self):
         """
-
+        Creates an endpoint handler that would return result of a cypher.
+        :return: A request handler callable.
+        :rtype: Callable
         """
 
         graph_interface = self.graph_interface
@@ -132,6 +165,11 @@ class EndpointFactory:
         return Route('/cypher', post_handler, methods=['post'])
 
     def create_open_api_schema_endpoint(self):
+        """
+        Creates a swagger spec for the endpoints to be created and exposes it as an endpoint too.
+        :return: A request handler callable.
+        :rtype: Callable
+        """
         paths = {}
 
         graph_schema = self.graph_interface.get_schema()
@@ -139,12 +177,13 @@ class EndpointFactory:
         for source_node in graph_schema:
             target_nodes = graph_schema[source_node]
             # add /<source_type>/curie path
+            example = self.graph_interface.get_examples(source_node)
             paths[f'/{source_node}/{{curie}}'] = {
                 'get': {
-                    'description': f'Returns `{source_node}` based on curie.',
+                    'description': f'Returns `{source_node}` based on `curie`.',
                     'summary': f'Find {source_node} by curie.',
                     'operationId': f'get_{source_node}_by_curie',
-                    'parameters': {
+                    'parameters': [{
                         'name': 'curie',
                         'in': 'path',
                         'description': f'The curie of {source_node} that needs to be fetched.',
@@ -152,60 +191,190 @@ class EndpointFactory:
                         'schema': {
                             'type': 'string'
                         }
+                    }],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': example
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
             # add /<source_type>/<target_type>/curie paths
             for target_node in target_nodes:
+                example = self.graph_interface.get_examples(source_node, target_node)
                 paths[f'/{source_node}/{target_node}/{{curie}}'] = {
                     'get': {
                         'description': f'Returns one hop paths from {source_node} with `curie` to target type {target_node}.',
                         'summary': f'Get one hop results from {source_node} to {target_node}.',
                         'operationId': f'get_one_hop_{source_node}_to_{target_node}',
-                        'parameters': {
+                        'parameters': [{
                             'name': 'curie',
                             'in': 'path',
-                            'description': f'The curie of {source_node} that needs that path starts from.',
+                            'description': f'The curie of {source_node} that path starts from.',
                             'required': True,
                             'schema': {
                                 'type': 'string'
+                            }
+                        }],
+                        'responses': {
+                            '200': {
+                                'description': 'OK',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            'type': 'object',
+                                            'example': example
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
+        # adding schema to openapi spec
+
+        paths['/graph/schema'] = {
+            'get': {
+                'description': 'Returns an object where outer keys represent source types with second level keys as '
+                               'targets. And the values of the second level keys is the type of possible edge types'
+                               'that connect these concepts.',
+                'operationId': 'get_graph_schema',
+                'parameters': [],
+                'responses': {
+                    '200': {
+                        'description': 'OK',
+                        'content': {
+                            'application/json': {
+                                'schema': {
+                                    'type': 'object',
+                                    'example': {
+                                        'chemical_substance': {
+                                            'gene': ['directly_interacts_with']
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        # adding cypher endpoint to openapi spec
+
+        example_cypher = 'MATCH (c) return c limit 1'
+        paths['/cypher'] = {
+            'post': {
+                'summary': 'Run cypher query.',
+                'description': 'Runs cypher query against the Neo4j instance, and returns an equivalent '
+                               'response exepected from a Neo4j HTTP endpoint '
+                               '(https://neo4j.com/docs/rest-docs/current/).',
+                'parameters': [
+                    {
+                        'description': 'Cypher query.',
+                        'content': {
+                            'text/plain': {
+                                'examples': example_cypher
+                            }
+                        },
+                        'in': 'query',
+                        'allowEmptyValue': False,
+                        'required': True
+
+                    }
+                ],
+                'responses': {
+                    '200': {
+                        'description': 'OK',
+                        'content': {
+                            'application/json': {
+                                'schema': {
+                                    'type': 'object',
+                                    'example': self.graph_interface.run_cypher(example_cypher)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         schemas = SchemaGenerator(
             {
                 "openapi": "3.0.0",
                 "info": {
-                    "title": "Example API", "version": "1.0"
+                    "title": "PLATER", "version": "1.0"
                 },
                 "paths": paths
             }
         )
 
-        return Route('/openapi', schemas.OpenAPIResponse)
+        return Route('/openapi.yml', schemas.OpenAPIResponse)
 
     def create_graph_schema_endpoint(self):
         """
-
+        Creates a graph schema endpoint. This endpoint is a representation of the graph schema as
+        ```
+        [{
+            source_type: {
+                target_type: [
+                    'predicate_1',
+                    'predicate_2'
+                ]
+            }
+        }]
+        ```
+        :return: endpoint handler.
+        :rtype: Callable
         """
         graph_interface = self.graph_interface
+
         async def get_handler(request):
             response = graph_interface.get_schema()
             return JSONResponse(response)
+
         return Route('/graph/schema', get_handler)
+
+    def create_swagger_ui_endpoint(self):
+        """
+
+       """
+        # build Swagger UI
+        env = Environment(
+            loader=FileSystemLoader(swagger_ui_3_path)
+        )
+        template = env.get_template('index.j2')
+        html_content = template.render(
+            title="Biolink Model Lookup",
+            openapi_spec_url="./openapi.yml",
+        )
+
+        async def swagger_doc_handler(request):
+            return HTMLResponse(content=html_content, media_type='text/html')
+
+        return Route('/apidocs', swagger_doc_handler)
 
     def create_endpoint(self, endpoint_type, **kwargs) -> Route:
         """
-
+        Interfaces creation of endpoints.
+        :param endpoint_type: type of endpoint to create.
+        :type endpoint_type: str
+        :param kwargs:
+        :type kwargs:
+        :return:
+        :rtype:
         """
         endpoint_router = self._endpoint_loader.get(endpoint_type)
         if endpoint_router is None:
             raise TypeError(f"Unable to load endpoint type: {endpoint_type}")
         return endpoint_router(kwargs)
-
-
-
-
