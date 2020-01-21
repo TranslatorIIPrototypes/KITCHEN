@@ -6,7 +6,7 @@
 
 from PLATER.services.validators.Validator import Validator
 from PLATER.services.docker_interface import DockerInterface
-from PLATER.services.config import Config
+from PLATER.services.config import config
 from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
 from PLATER.services.util.logutil import LoggingUtil
@@ -16,9 +16,9 @@ import uvicorn
 
 logger = LoggingUtil.init_logging(__name__,
                                   #
-                                  Config.get('logging_level'),
-                                  Config.get('logging_format'),
-                                  Config.get('logging_file_path')
+                                  config.get('logging_level'),
+                                  config.get('logging_format'),
+                                  config.get('logging_file_path')
                                   )
 
 class Plater:
@@ -26,7 +26,7 @@ class Plater:
 
         self.settings = settings
         validate = self.settings.get('validate', False)
-        self.config = Config
+        self.config = config
         if validate:
             logger.debug('[0] Validation turned on.')
             self.validator = Validator()

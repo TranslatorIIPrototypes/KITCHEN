@@ -4,10 +4,15 @@
 #
 ############
 
-from KITCHEN.PLATER.services.validators.KGX_validator import KGX_Validator
-from KITCHEN.PLATER.logs import init_logger
+from PLATER.services.validators.KGX_validator import KGX_Validator
+from PLATER.services.util.logutil import LoggingUtil
+from PLATER.services.config import config
 
-logger = init_logger(__name__)
+logger = LoggingUtil.init_logging(__name__,
+                                  config.get('logging_level'),
+                                  config.get('logging_format'),
+                                  config.get('logging_file_path')
+                                  )
 
 class Validator():
     def __init__(self):
