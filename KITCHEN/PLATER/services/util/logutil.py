@@ -16,9 +16,9 @@ class LoggingUtil(object):
 
         # define the output types
         format_types = {
-            "short": '%(funcName)s: %(message)s',
-            "medium": '%(funcName)s: %(asctime)-15s %(message)s',
-            "long": '%(asctime)-15s %(filename)s %(funcName)s %(levelname)s: %(message)s'
+            "short": '[%(name)s.%(funcName)s] : %(message)s',
+            "medium": '[%(name)s.%(funcName)s] - %(asctime)-15s: %(message)s',
+            "long": '[%(name)s.%(funcName)s] - %(asctime)-15s %(filename)s %(levelname)s: %(message)s'
         }[format_sel]
 
         # create a stream handler (default to console)
@@ -39,7 +39,7 @@ class LoggingUtil(object):
         # if there was a file path passed in use it
         if log_file_path is not None:
             # create a rotating file handler, 100mb max per file with a max number of 10 files
-            file_handler = RotatingFileHandler(filename=log_file_path + name + '.log', maxBytes=1000000, backupCount=10)
+            file_handler = RotatingFileHandler(filename=log_file_path, maxBytes=1000000, backupCount=10)
 
             # set the formatter
             file_handler.setFormatter(formatter)
