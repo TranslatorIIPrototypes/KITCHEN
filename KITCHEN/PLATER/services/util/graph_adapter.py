@@ -190,9 +190,9 @@ class GraphInterface:
             """
             import json
             if target:
-                query = f"MATCH ({source}:{source})-[edge]->({target}:{target}) return {source}, edge, {target} limit 1"
+                query = f"MATCH (source:{source})-[edge]->(target:{target}) return source, edge, target limit 1"
                 response = self.run_cypher(query)
-                final = self.driver.convert_to_dict(response)
+                final = list(map(lambda data: data['row'], response['results'][0]['data']))
                 return final
             else:
                 query = f"MATCH ({source}:{source}) return {source} limit 1"
