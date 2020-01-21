@@ -7,7 +7,7 @@ def parse_args(args):
     build_tag = args.build_tag
 
     if args.dump_file:
-        settings['load'] = True
+        # settings['load'] = True
         settings['dump_file'] = args.dump_file
     plater = Plater(build_tag=build_tag, settings=settings)
     plater.run_web_server()
