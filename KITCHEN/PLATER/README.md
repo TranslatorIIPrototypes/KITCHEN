@@ -1,6 +1,6 @@
 ## PLATER
 
-PLATER is a service to sand up REST endpoint over a neo4j database.
+PLATER is a service to stand up REST endpoint over a neo4j database.
 
 ### Installation
 
@@ -8,12 +8,12 @@ To run the web server directly:
 Create a virtual Environment and activate.
 
     cd <PLATER-ROOT>
-    python -m venv venv
+    python<version> -m venv venv
     source venv/bin/activate
     
  Install dependencies
     
-    pip install requirements.txt
+    pip install -r requirements.txt
     
  
  Configure NEO4J Host settings
@@ -22,7 +22,7 @@ Create a virtual Environment and activate.
     export NEO4J_HTTP_PORT=7474
     export NEO4J_USERNAME=neo4j
     export NEO4J_PASSOWORD=neo4j
-    export WEB_HOST=0.0.0.0 # <Ip to use Uvicorn web server host>
+    export WEB_HOST=0.0.0.0 # <Ip to use Unicorn web server host>
     export WEB_PORT=8080 <PORT for the web server >
   
   Run Script
