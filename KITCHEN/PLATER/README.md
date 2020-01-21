@@ -22,7 +22,7 @@ Create a virtual Environment and activate.
     export NEO4J_HTTP_PORT=7474
     export NEO4J_USERNAME=neo4j
     export NEO4J_PASSOWORD=neo4j
-    export WEB_HOST=0.0.0.0 # <Ip to use Unicorn web server host>
+    export WEB_HOST=0.0.0.0 # <Ip to use Uvicorn web server host>
     export WEB_PORT=8080 <PORT for the web server >
   
   Run Script
