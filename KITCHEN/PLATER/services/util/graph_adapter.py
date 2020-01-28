@@ -84,8 +84,8 @@ class GraphInterface:
             if self.schema is None:
                 query = """
                            MATCH (a)-[x]->(b) WITH
-                               filter(la in labels(a) where not la in ['named_thing', 'Concept']) as las,
-                               filter(lb in labels(b) where not lb in ['named_thing', 'Concept']) as lbs,
+                               filter(la in labels(a) where not la in ['Concept']) as las,
+                               filter(lb in labels(b) where not lb in ['Concept']) as lbs,
                            type(x) as predicate
                            UNWIND las as source_label
                            UNWIND lbs as target_label 

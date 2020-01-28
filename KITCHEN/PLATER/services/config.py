@@ -25,7 +25,7 @@ class Config(dict):
             config = os.path.join (os.path.dirname (__file__), config)
         '''
         if isinstance(config, str):
-            config_path = Config.get_resource_path (config)
+            config_path = Config.get_resource_path(config)
             with open(config_path, 'r') as f:
                 self.conf = yaml.safe_load (f)
         elif isinstance(config, dict):
@@ -34,7 +34,7 @@ class Config(dict):
             raise ValueError
         self.prefix = prefix
 
-    def get_service (self, service):
+    def get_service(self, service):
         result = {}
         try:
             result = self['translator']['services'][service]
@@ -78,5 +78,6 @@ class Config(dict):
                 return Config(value, prefix=name)
             else:
                 return value
+
 
 config = Config('plater.conf')

@@ -1,22 +1,42 @@
 import argparse
 from PLATER.services.core import Plater
-from Common.logutil import LoggingUtil
+from PLATER.services.util.logutil import LoggingUtil
+from PLATER.services.config import config
+import threading
 
+logger = LoggingUtil.init_logging(__name__,
+                                  config.get('logging_level'),
+                                  config.get('logging_format'),
+                                  config.get('logging_file_path')
+                                  )
 def parse_args(args):
+    """
+    Parse
+    :param args:
+    :return:
+    """
     settings = {}
     build_tag = args.build_tag
+    if args.automat_host:
+        logger.debug(f'Running in clustered mode about to join {args.automat_host}')
 
-    if args.dump_file:
-        # settings['load'] = True
-        settings['dump_file'] = args.dump_file
+        heart_rate = args.heart_rate
+        # If heart rate was not provided default to this.
+        if not heart_rate:
+            heart_rate = 0.5
+
+        # start heart beat thread.
+        heart_beat_thread = threading.Thread(
+            target=Plater.send_heart_beat,
+            args=(args.automat_host, build_tag, heart_rate)
+        )
+        heart_beat_thread.start()
+
     plater = Plater(build_tag=build_tag, settings=settings)
     plater.run_web_server()
 
 
 if __name__=='__main__':
-    # first command
-    # load a dump file on to a neo4j container and save it.
-
     parser = argparse.ArgumentParser(
         description= 'PLATER, stand up a REST-api in front of neo4j database.'
     )
@@ -26,18 +46,19 @@ if __name__=='__main__':
                                                                     'containers generated.'
     )
     parser.add_argument(
-        '-d',
-        '--dump_file',
-        help='A neo4j dump file to load into the neo4j instance. If this is specified it will force create a new'
-             'container instance with the specified `build_tag`. This will DELETE existing builds.'
+        '-a',
+        '--automat_host',
+        help='Needs to be a full http/https url. Eg. http://<automat_location>:<automat_port>'
+             'If you have an Automat (https://github.com/TranslatorIIPrototypes/KITCHEN/tree/master/KITCHEN/Automat) '
+             'cluster and you\'d like this instance to be accessible via the Automat interface.'
     )
-    # parser.add_argument(
-    #     '-s',
-    #     '--run_server',
-    #     help='Run webserver.'
-    # )
+
+    parser.add_argument(
+        '-r',
+        '--heart_rate',
+        help='The rate (in seconds) at which to send heartbeats to Automat.'
+    )
 
 
     args = parser.parse_args()
-
     parse_args(args)

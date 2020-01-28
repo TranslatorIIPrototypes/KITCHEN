@@ -27,12 +27,12 @@ class EndpointFactory:
             EndpointFactory.HOP_ENDPOINT_TYPE: lambda kwargs: self.create_hop_endpoint(**kwargs),
             EndpointFactory.NODE_ENDPOINT_TYPE: lambda kwargs: self.create_node_endpoint(**kwargs),
             EndpointFactory.CYPHER_ENDPOINT_TYPE: lambda kwargs: self.create_cypher_endpoint(),
-            EndpointFactory.OPEN_API_ENDPOINT_TYPE: lambda kwargs: self.create_open_api_schema_endpoint(),
+            EndpointFactory.OPEN_API_ENDPOINT_TYPE: lambda kwargs: self.create_open_api_schema_endpoint(**kwargs),
             EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint(),
-            EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(),
+            EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(**kwargs),
         }
 
-    def create_app(self):
+    def create_app(self, build_tag):
         """
         Creates a startlette web application, based on a neo4j backend.
         :return: starlette web application.
@@ -82,7 +82,10 @@ class EndpointFactory:
 
         endpoints.append(
             self.create_endpoint(
-                EndpointFactory.OPEN_API_ENDPOINT_TYPE
+                EndpointFactory.OPEN_API_ENDPOINT_TYPE,
+                **{
+                    'build_tag': build_tag
+                }
             )
         )
 
@@ -98,7 +101,10 @@ class EndpointFactory:
 
         endpoints.append(
             self.create_endpoint(
-                EndpointFactory.SWAGGER_UI_ENDPOINT
+                EndpointFactory.SWAGGER_UI_ENDPOINT,
+                **{
+                    'build_tag': build_tag
+                }
             )
         )
 
@@ -164,7 +170,7 @@ class EndpointFactory:
 
         return Route('/cypher', post_handler, methods=['post'])
 
-    def create_open_api_schema_endpoint(self):
+    def create_open_api_schema_endpoint(self, build_tag):
         """
         Creates a swagger spec for the endpoints to be created and exposes it as an endpoint too.
         :return: A request handler callable.
@@ -279,20 +285,21 @@ class EndpointFactory:
                 'description': 'Runs cypher query against the Neo4j instance, and returns an equivalent '
                                'response exepected from a Neo4j HTTP endpoint '
                                '(https://neo4j.com/docs/rest-docs/current/).',
-                'parameters': [
-                    {
-                        'description': 'Cypher query.',
-                        'content': {
-                            'text/plain': {
-                                'examples': example_cypher
+                'requestBody': {
+                    'description': 'Cypher query.',
+                    'content': {
+                        'application/json': {
+                            'schema': {
+                                'type': 'object',
+                                'example': {
+                                    'query': example_cypher
+                                }
                             }
-                        },
-                        'in': 'query',
-                        'allowEmptyValue': False,
-                        'required': True
-
-                    }
-                ],
+                        }
+                    },
+                    'allowEmptyValue': False,
+                    'required': True
+                },
                 'responses': {
                     '200': {
                         'description': 'OK',
@@ -309,13 +316,18 @@ class EndpointFactory:
             }
         }
 
+        # Add build tag to all the paths
+        for path in paths:
+            for method in paths[path]:
+                paths[path][method]['tags'] = [{'name': build_tag}]
+
         schemas = SchemaGenerator(
             {
-                "openapi": "3.0.0",
-                "info": {
-                    "title": "PLATER", "version": "1.0"
+                'openapi': '3.0.2',
+                'info': {
+                    'title': f'PLATER - {build_tag}',
                 },
-                "paths": paths
+                'paths': paths
             }
         )
 
@@ -345,7 +357,7 @@ class EndpointFactory:
 
         return Route('/graph/schema', get_handler)
 
-    def create_swagger_ui_endpoint(self):
+    def create_swagger_ui_endpoint(self, build_tag):
         """
 
        """
@@ -355,7 +367,7 @@ class EndpointFactory:
         )
         template = env.get_template('index.j2')
         html_content = template.render(
-            title="Biolink Model Lookup",
+            title=f'Plater- {build_tag}',
             openapi_spec_url="./openapi.yml",
         )
 

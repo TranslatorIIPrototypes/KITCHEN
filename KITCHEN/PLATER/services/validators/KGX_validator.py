@@ -5,7 +5,6 @@
 from kgx import  Validator
 
 from PLATER.services.util.logutil import LoggingUtil
-import logging
 from networkx import DiGraph
 from kgx.transformers.json_transformer import JsonTransformer
 import json
