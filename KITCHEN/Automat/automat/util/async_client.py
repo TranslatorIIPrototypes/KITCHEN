@@ -1,4 +1,6 @@
 import aiohttp
+from aiohttp.web import HTTPException
+import traceback
 from Automat.automat.config import config
 from Automat.automat.util.logutil import LoggingUtil
 
@@ -24,11 +26,19 @@ async def async_get_json(url, headers = {}):
                         'error': error
                     }
                 return await response.json()
+        except HTTPException as e:
+            logger.error(f'error contacting {url} -- {e}')
+            logger.debug(traceback.print_exc())
+            return {
+                'error': f"Backend server at {url} caused  {e}"
+            }
         except Exception as e:
             logger.error(f"Failed to get response from {url}.")
+            logger.debug(traceback.print_exc())
             return {
-                'error': f"Server returned {e}"
+                'error': f'Internal server error {e}'
             }
+
 
 
 async def async_post_json(url, headers= {} , body = ''):
