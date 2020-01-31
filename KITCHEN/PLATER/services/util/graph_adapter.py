@@ -1,9 +1,19 @@
-import requests
 import base64
+import aiohttp
+import requests
+import traceback
+from PLATER.services.util.logutil import LoggingUtil
+from PLATER.services.config import config
 
 
+logger = LoggingUtil.init_logging(__name__,
+                                  config.get('logging_level'),
+                                  config.get('logging_format'),
+                                  config.get('logging_file_path')
+                                  )
 
-class Neo4j_HTTP_Driver:
+
+class Neo4jHTTPDriver:
     def __init__(self, host: str, port: int,  auth: set, scheme: str = 'http'):
         self._host = host
         self._neo4j_transaction_endpoint = "/db/data/transaction/commit"
@@ -13,12 +23,47 @@ class Neo4j_HTTP_Driver:
         self._header = {
                 'Accept': 'application/json; charset=UTF-8',
                 'Content-Type': 'application/json',
-                'Authorization': base64.b64encode(f"{auth[0]}:{auth[1]}".encode("utf-8"))
+                'Authorization': 'Basic %s' % base64.b64encode(f"{auth[0]}:{auth[1]}".encode('utf-8')).decode('utf-8')
             }
+        # ping and raise error if neo4j doesn't respond.
+        logger.debug('PINGING NEO4J')
+        self.ping()
 
-    def run(self, query):
+    async def post_request_json(self, payload):
+        tcp_connector = aiohttp.TCPConnector(limit=60)
+        async with aiohttp.ClientSession(connector=tcp_connector) as session:
+            async with session.post(self._full_transaction_path, json=payload, headers=self._header) as response:
+                if response.status != 200:
+                    logger.error(f"[x] Problem contacting Neo4j server {self._host}:{self._port} -- {response.status}")
+                    txt = await response.text()
+                    logger.debug(f"[x] Server responded with {txt}")
+                else:
+                    return await response.json()
+
+    def ping(self):
         """
-        Runs a neo4j query.
+        Pings the neo4j backend.
+        :return:
+        """
+        neo4j_db_labels_endpoint = "/db/data/labels"
+        ping_url = f"{self._scheme}://{self._host}:{self._port}{neo4j_db_labels_endpoint}"
+        try:
+            import time
+            now = time.time()
+            requests.get(ping_url, headers=self._header)
+            later = time.time()
+            time_taken = later - now
+            if time_taken > 5 : # greater than 5 seconds it's not healthy
+                logger.warn(f"Contacting neo4j took more than 5 seconds ({time_taken}). Neo4j might be stressed.")
+        except Exception as e:
+            logger.error(f"Error contacting Neo4j @ {ping_url} -- Exception raised -- {e}")
+            logger.debug(traceback.print_exc())
+            raise RuntimeError('Connection to Neo4j could not be established.')
+
+
+    async def run(self, query):
+        """
+        Runs a neo4j query async.
         :param query: Cypher query.
         :type query: str
         :return: result of query.
@@ -33,11 +78,27 @@ class Neo4j_HTTP_Driver:
             ]
         }
 
+        response = await self.post_request_json(payload)
+
+        return response
+
+    def run_sync(self, query):
+        """
+        Runs a neo4j query. Can cause the async loop to block.
+        :param query:
+        :return:
+        """
+        payload = {
+            "statements": [
+                {
+                    "statement": f"{query}"
+                }
+            ]
+        }
         response = requests.post(
             self._full_transaction_path,
             headers=self._header,
             json=payload).json()
-
         return response
 
     def convert_to_dict(self, response):
@@ -63,6 +124,7 @@ class Neo4j_HTTP_Driver:
                         array.append(new_row)
         return array
 
+
 class GraphInterface:
     """
     Singleton class for interfacing with the graph.
@@ -70,13 +132,12 @@ class GraphInterface:
 
     class _GraphInterface:
         def __init__(self, host, port, auth):
-            self.driver = Neo4j_HTTP_Driver(host=host, port= port, auth= auth)
+            self.driver = Neo4jHTTPDriver(host=host, port= port, auth= auth)
             self.schema = None
-
 
         def get_schema(self):
             """
-            Gets the schema of the graph.
+            Gets the schema of the graph. To be used by
             :return: Dict of structure source label as outer most keys, target labels as inner keys and list of predicates
             as value.
             :rtype: dict
@@ -91,8 +152,7 @@ class GraphInterface:
                            UNWIND lbs as target_label 
                            RETURN DISTINCT source_label, predicate, target_label
                            """
-                result = self.driver.run(query)
-
+                result = self.driver.run_sync(query)
                 structured = self.driver.convert_to_dict(result)
                 schema_bag = {}
                 for triplet in structured:
@@ -108,7 +168,7 @@ class GraphInterface:
                 self.schema = schema_bag
             return self.schema
 
-        def get_node(self, node_type: str, curie: str) -> dict:
+        async def get_node(self, node_type: str, curie: str) -> dict:
             """
             Returns a node that matches curie as its ID.
             :param node_type: Type of the node.
@@ -119,7 +179,7 @@ class GraphInterface:
             :rtype: dict
             """
             query = f"MATCH (c:{node_type}{{id: '{curie}'}}) return c"
-            response = self.driver.run(query)
+            response = await self.driver.run(query)
 
             data = response.get('results',[{}])[0].get('data', [])
             '''
@@ -136,7 +196,7 @@ class GraphInterface:
                 rows = reduce(lambda x, y: x + y.get('row', []), data, [])
             return rows
 
-        def get_single_hops(self, source_type, target_type, curie):
+        async def get_single_hops(self, source_type, target_type, curie):
             """
             Returns a triplets of source to target where source id is curie.
             :param source_type: Type of the source node.
@@ -150,11 +210,11 @@ class GraphInterface:
             """
 
             query = f'MATCH (c:{source_type}{{id: \'{curie}\'}})-[e]->(b:{target_type}) return distinct c , e, b'
-            response = self.driver.run(query)
+            response = await self.driver.run(query)
             rows = list(map(lambda data: data['row'], response['results'][0]['data']))
             return rows
 
-        def run_cypher(self, cypher):
+        async def run_cypher(self, cypher):
             """
             Runs cypher directly.
             :param cypher: cypher query.
@@ -162,9 +222,9 @@ class GraphInterface:
             :return: unprocessed neo4j response.
             :rtype: dict
             """
-            return self.driver.run(cypher)
+            return await self.driver.run(cypher)
 
-        def get_sample(self, node_type):
+        async def get_sample(self, node_type):
             """
             Returns a few nodes.
             :param node_type: Type of nodes.
@@ -173,11 +233,11 @@ class GraphInterface:
             :rtype: dict
             """
             query = f"MATCH (c:{node_type}) return c limit 5"
-            response = self.driver.run(query)
+            response = await self.driver.run(query)
             rows = response['results'][0]['data'][0]['row']
             return rows
 
-        def get_examples(self, source, target=None):
+        async def get_examples(self, source, target=None):
             """
             Returns an example for source node only if target is not specified, if target is specified a sample one hop
             is returned.
@@ -188,15 +248,14 @@ class GraphInterface:
             :return: A single source node value if target is not provided. If target is provided too, a triplet.
             :rtype:
             """
-            import json
             if target:
                 query = f"MATCH (source:{source})-[edge]->(target:{target}) return source, edge, target limit 1"
-                response = self.run_cypher(query)
+                response = await self.run_cypher(query)
                 final = list(map(lambda data: data['row'], response['results'][0]['data']))
                 return final
             else:
                 query = f"MATCH ({source}:{source}) return {source} limit 1"
-                response = self.run_cypher(query)
+                response = await self.run_cypher(query)
                 final = list(map(lambda node: node[source], self.driver.convert_to_dict(response)))
                 return final
 
@@ -210,9 +269,3 @@ class GraphInterface:
     def __getattr__(self, item):
         # proxy function calls to the inner object.
         return getattr(self.instance, item)
-
-if __name__=="__main__":
-    graph_interface = GraphInterface('192.168.99.101', 7474, ('neo4j', 'pass'))
-    import json
-    print(json.dumps(graph_interface.get_single_hops(source_type='chemical_substance', target_type='chemical_substance', curie='CHEBI:15377')[:5], indent=2))
-    print(json.dumps(graph_interface.get_schema(), indent=4 ))

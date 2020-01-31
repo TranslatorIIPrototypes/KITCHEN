@@ -1,11 +1,20 @@
 from starlette.requests import Request
 from starlette.responses import JSONResponse, HTMLResponse
+from starlette.schemas import OpenAPIResponse
 from starlette.routing import Route
 from starlette.applications import Starlette
 from starlette.schemas import SchemaGenerator
 from starlette.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
+from PLATER.services.util.logutil import LoggingUtil
+from PLATER.services.config import config
+
+logger = LoggingUtil.init_logging(__name__,
+                                  config.get('logging_level'),
+                                  config.get('logging_format'),
+                                  config.get('logging_file_path')
+                                  )
 
 from PLATER.services.util.graph_adapter import GraphInterface
 
@@ -110,7 +119,7 @@ class EndpointFactory:
 
         routes = list(map(lambda endpoint: endpoint, endpoints))
         app = Starlette(
-            debug=True,
+            debug=int(config.get('logging_level')) == 10,
             routes=routes
         )
         # mount swagger ui files
@@ -131,7 +140,7 @@ class EndpointFactory:
 
         async def get_handler(request: Request) -> JSONResponse:
             curie = request.path_params['curie']
-            response = graph_interface.get_single_hops(source_type, target_type, curie)
+            response = await graph_interface.get_single_hops(source_type, target_type, curie)
             return JSONResponse(response)
 
         return Route(f"/{source_type}/{target_type}/{{curie}}", get_handler)
@@ -148,7 +157,7 @@ class EndpointFactory:
 
         async def get_handler(request: Request) -> JSONResponse:
             curie = request.path_params['curie']
-            response = graph_interface.get_node(node_type, curie)
+            response = await graph_interface.get_node(node_type, curie)
             return JSONResponse(response)
 
         return Route(f'/{node_type}/{{curie}}', get_handler)
@@ -165,7 +174,7 @@ class EndpointFactory:
         async def post_handler(request: Request) -> JSONResponse:
             query = await request.json()
             query = query['query']
-            response = graph_interface.run_cypher(query)
+            response = await graph_interface.run_cypher(query)
             return JSONResponse(response)
 
         return Route('/cypher', post_handler, methods=['post'])
@@ -176,56 +185,27 @@ class EndpointFactory:
         :return: A request handler callable.
         :rtype: Callable
         """
-        paths = {}
 
-        graph_schema = self.graph_interface.get_schema()
 
-        for source_node in graph_schema:
-            target_nodes = graph_schema[source_node]
-            # add /<source_type>/curie path
-            example = self.graph_interface.get_examples(source_node)
-            paths[f'/{source_node}/{{curie}}'] = {
-                'get': {
-                    'description': f'Returns `{source_node}` based on `curie`.',
-                    'summary': f'Find {source_node} by curie.',
-                    'operationId': f'get_{source_node}_by_curie',
-                    'parameters': [{
-                        'name': 'curie',
-                        'in': 'path',
-                        'description': f'The curie of {source_node} that needs to be fetched.',
-                        'required': True,
-                        'schema': {
-                            'type': 'string'
-                        }
-                    }],
-                    'responses': {
-                        '200': {
-                            'description': 'OK',
-                            'content': {
-                                'application/json': {
-                                    'schema': {
-                                        'type': 'object',
-                                        'example': example
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        async def get_handler(request: Request) -> OpenAPIResponse:
 
-            # add /<source_type>/<target_type>/curie paths
-            for target_node in target_nodes:
-                example = self.graph_interface.get_examples(source_node, target_node)
-                paths[f'/{source_node}/{target_node}/{{curie}}'] = {
+            paths = {}
+
+            graph_schema = self.graph_interface.get_schema()
+
+            for source_node in graph_schema:
+                target_nodes = graph_schema[source_node]
+                # add /<source_type>/curie path
+                example = await self.graph_interface.get_examples(source_node)
+                paths[f'/{source_node}/{{curie}}'] = {
                     'get': {
-                        'description': f'Returns one hop paths from {source_node} with `curie` to target type {target_node}.',
-                        'summary': f'Get one hop results from {source_node} to {target_node}.',
-                        'operationId': f'get_one_hop_{source_node}_to_{target_node}',
+                        'description': f'Returns `{source_node}` based on `curie`.',
+                        'summary': f'Find {source_node} by curie.',
+                        'operationId': f'get_{source_node}_by_curie',
                         'parameters': [{
                             'name': 'curie',
                             'in': 'path',
-                            'description': f'The curie of {source_node} that path starts from.',
+                            'description': f'The curie of {source_node} that needs to be fetched.',
                             'required': True,
                             'schema': {
                                 'type': 'string'
@@ -247,25 +227,59 @@ class EndpointFactory:
                     }
                 }
 
-        # adding schema to openapi spec
-
-        paths['/graph/schema'] = {
-            'get': {
-                'description': 'Returns an object where outer keys represent source types with second level keys as '
-                               'targets. And the values of the second level keys is the type of possible edge types'
-                               'that connect these concepts.',
-                'operationId': 'get_graph_schema',
-                'parameters': [],
-                'responses': {
-                    '200': {
-                        'description': 'OK',
-                        'content': {
-                            'application/json': {
+                # add /<source_type>/<target_type>/curie paths
+                for target_node in target_nodes:
+                    example = await self.graph_interface.get_examples(source_node, target_node)
+                    paths[f'/{source_node}/{target_node}/{{curie}}'] = {
+                        'get': {
+                            'description': f'Returns one hop paths from {source_node} with `curie` to target type {target_node}.',
+                            'summary': f'Get one hop results from {source_node} to {target_node}.',
+                            'operationId': f'get_one_hop_{source_node}_to_{target_node}',
+                            'parameters': [{
+                                'name': 'curie',
+                                'in': 'path',
+                                'description': f'The curie of {source_node} that path starts from.',
+                                'required': True,
                                 'schema': {
-                                    'type': 'object',
-                                    'example': {
-                                        'chemical_substance': {
-                                            'gene': ['directly_interacts_with']
+                                    'type': 'string'
+                                }
+                            }],
+                            'responses': {
+                                '200': {
+                                    'description': 'OK',
+                                    'content': {
+                                        'application/json': {
+                                            'schema': {
+                                                'type': 'object',
+                                                'example': example
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+            # adding schema to openapi spec
+
+            paths['/graph/schema'] = {
+                'get': {
+                    'description': 'Returns an object where outer keys represent source types with second level keys as '
+                                   'targets. And the values of the second level keys is the type of possible edge types'
+                                   'that connect these concepts.',
+                    'operationId': 'get_graph_schema',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': {
+                                            'chemical_substance': {
+                                                'gene': ['directly_interacts_with']
+                                            }
                                         }
                                     }
                                 }
@@ -274,64 +288,65 @@ class EndpointFactory:
                     }
                 }
             }
-        }
 
-        # adding cypher endpoint to openapi spec
+            # adding cypher endpoint to openapi spec
 
-        example_cypher = 'MATCH (c) return c limit 1'
-        paths['/cypher'] = {
-            'post': {
-                'summary': 'Run cypher query.',
-                'description': 'Runs cypher query against the Neo4j instance, and returns an equivalent '
-                               'response exepected from a Neo4j HTTP endpoint '
-                               '(https://neo4j.com/docs/rest-docs/current/).',
-                'requestBody': {
-                    'description': 'Cypher query.',
-                    'content': {
-                        'application/json': {
-                            'schema': {
-                                'type': 'object',
-                                'example': {
-                                    'query': example_cypher
-                                }
-                            }
-                        }
-                    },
-                    'allowEmptyValue': False,
-                    'required': True
-                },
-                'responses': {
-                    '200': {
-                        'description': 'OK',
+            example_cypher = 'MATCH (c) return c limit 1'
+            paths['/cypher'] = {
+                'post': {
+                    'summary': 'Run cypher query.',
+                    'description': 'Runs cypher query against the Neo4j instance, and returns an equivalent '
+                                   'response exepected from a Neo4j HTTP endpoint '
+                                   '(https://neo4j.com/docs/rest-docs/current/).',
+                    'requestBody': {
+                        'description': 'Cypher query.',
                         'content': {
                             'application/json': {
                                 'schema': {
                                     'type': 'object',
-                                    'example': self.graph_interface.run_cypher(example_cypher)
+                                    'example': {
+                                        'query': example_cypher
+                                    }
+                                }
+                            }
+                        },
+                        'allowEmptyValue': False,
+                        'required': True
+                    },
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': await self.graph_interface.run_cypher(example_cypher)
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        # Add build tag to all the paths
-        for path in paths:
-            for method in paths[path]:
-                paths[path][method]['tags'] = [{'name': build_tag}]
+            # Add build tag to all the paths
+            for path in paths:
+                for method in paths[path]:
+                    paths[path][method]['tags'] = [{'name': build_tag}]
 
-        schemas = SchemaGenerator(
-            {
-                'openapi': '3.0.2',
-                'info': {
-                    'title': f'PLATER - {build_tag}',
-                },
-                'paths': paths
-            }
-        )
+            schemas = SchemaGenerator(
+                {
+                    'openapi': '3.0.2',
+                    'info': {
+                        'title': f'PLATER - {build_tag}',
+                    },
+                    'paths': paths
+                }
+            )
 
-        return Route('/openapi.yml', schemas.OpenAPIResponse)
+            return schemas.OpenAPIResponse(request)
+
+        return Route('/openapi.yml', get_handler)
 
     def create_graph_schema_endpoint(self):
         """
