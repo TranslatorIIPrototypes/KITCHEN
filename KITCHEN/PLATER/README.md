@@ -27,7 +27,7 @@ Create a virtual Environment and activate.
   
   Run Script
   
-    python main.py test_build
+    python main.py <plater_build_tag>
  
     
  ### DOCKER 
@@ -44,6 +44,29 @@ Create a virtual Environment and activate.
                --env NEO4J_PASSWORD=<neo4j_password> \
                --env WEB_HOST=0.0.0.0 \
                --network=<docker_network_neo4j_is_running_at> \    
-                <image_tag> <build_tag>
+                <image_tag> <plater_build_tag>
 
-    # Currently build tag can be anything. Intent is to identify different instances of PLATER
+ 
+ ### Linking to Automat Server \[Optional\]
+ You can also serve several instances of plater through a common gateway(Automat). By 
+ passing `-a <automat_address>` to `main.py`. Usage: 
+ 
+ #####Python 
+    
+    python main.py -a <automat_address> <plater_build_tag>
+    
+ #####Docker
+    
+    docker run -p 0.0.0.0:8999:8080  \
+               --env NEO4J_HOST=<your_neo_host> \
+               --env NEO4J_HTTP_PORT=<your_neo4j_http_port> \
+               --env NEO4J_USERNAME=neo4j\
+               --env NEO4J_PASSWORD=<neo4j_password> \
+               --env WEB_HOST=0.0.0.0 \
+               --network=<docker_network_neo4j_is_running_at> \    
+                <image_tag> -a <automat_address> <plater_build_tag>
+    
+    
+   
+    
+    
