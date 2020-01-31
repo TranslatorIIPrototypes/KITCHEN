@@ -58,18 +58,15 @@ class Plater:
 
     @staticmethod
     def send_heart_beat(automat_host, build_tag, heart_rate):
-        print('woooowhaaa')
-        from socket import gethostname
         import time
         automat_heart_beat_url = f'{automat_host}/heartbeat'
         payload = {
             'tag': build_tag,
-            'port': config.get('WEB_PORT', 8080),
-            'host': gethostname()
+            'port': config.get('WEB_PORT', 8080)
         }
         while True:
             try:
-                requests.post(automat_heart_beat_url, json=payload, timeout=0.1)
+                requests.post(automat_heart_beat_url, json=payload, timeout=0.5)
             except Exception as e:
                 logger.error(f'[X] Error contacting automat sever {e}')
             time.sleep(heart_rate)
