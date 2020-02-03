@@ -334,19 +334,16 @@ class EndpointFactory:
                 for method in paths[path]:
                     paths[path][method]['tags'] = [{'name': build_tag}]
 
-            schemas = SchemaGenerator(
-                {
-                    'openapi': '3.0.2',
-                    'info': {
-                        'title': f'PLATER - {build_tag}',
-                    },
-                    'paths': paths
-                }
-            )
+            schema = {
+                'openapi': '3.0.2',
+                'info': {
+                    'title': f'PLATER - {build_tag}',
+                },
+                'paths': paths
+            }
+            return JSONResponse(schema)
 
-            return schemas.OpenAPIResponse(request)
-
-        return Route('/openapi.yml', get_handler)
+        return Route('/openapi.json', get_handler)
 
     def create_graph_schema_endpoint(self):
         """
@@ -383,7 +380,7 @@ class EndpointFactory:
         template = env.get_template('index.j2')
         html_content = template.render(
             title=f'Plater- {build_tag}',
-            openapi_spec_url="./openapi.yml",
+            openapi_spec_url="./openapi.json",
         )
 
         async def swagger_doc_handler(request):
