@@ -1,7 +1,7 @@
 import time
 from typing import NamedTuple
-from Automat.automat.config import config
-from Automat.automat.util.logutil import LoggingUtil
+from automat.config import config
+from automat.util.logutil import LoggingUtil
 
 
 logger = LoggingUtil.init_logging(__name__,

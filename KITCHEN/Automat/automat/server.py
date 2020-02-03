@@ -1,4 +1,4 @@
-from Automat.automat.core import Automat
+from automat.core import Automat
 
 automat = Automat()
 

@@ -1,7 +1,7 @@
 
-from Automat.automat.config import config
-from Automat.automat.util.logutil import LoggingUtil
-from Automat.automat.server import app
+from automat.config import config
+from automat.util.logutil import LoggingUtil
+from automat.server import app
 import uvicorn
 
 logger = LoggingUtil.init_logging(__name__,
@@ -17,5 +17,6 @@ if __name__=='__main__':
     uvicorn.run(
         app,
         host=web_server_host,
-        port=web_server_port
+        port=web_server_port,
+        log_level='debug'
     )

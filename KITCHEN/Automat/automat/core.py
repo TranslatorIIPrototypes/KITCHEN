@@ -1,7 +1,8 @@
-from Automat.automat.registry import Registry, Heartbeat
-from Automat.automat.config import config
-from Automat.automat.util.logutil import LoggingUtil
-from Automat.automat.util.async_client import async_get_json, async_get_response, async_post_json
+import asyncio
+from automat.registry import Registry, Heartbeat
+from automat.config import config
+from automat.util.logutil import LoggingUtil
+from automat.util.async_client import async_get_json, async_get_response, async_post_json
 from starlette.responses import JSONResponse, HTMLResponse, PlainTextResponse
 from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
@@ -42,7 +43,7 @@ class Automat:
         body = await Automat.read_body(receive)
         heart_beat_json = json.loads(body.decode('utf-8'))
 
-        heart_beat = Heartbeat(host=scope['client'][0],
+        heart_beat = Heartbeat(host=heart_beat_json['host'],
                                port=heart_beat_json['port'],
                                tag=heart_beat_json['tag'])
 
@@ -132,10 +133,19 @@ class Automat:
         }, status_code=404)
         await json_response(scope, receive, send)
 
+    @staticmethod
+    async def get_swagger_paths(server_url):
+        open_api_path = '/openapi.json'
+        full_path = f'http://{server_url}{open_api_path}'
+        response = await async_get_json(full_path)
+        if 'error' in response:
+            logger.error(response['error'])
+            return {}
+        logger.debug(response)
+        return response
+
     async def handle_open_api_yaml(self, scope, receive, send):
         ### For each registered endpoint try and grab its open_api_spec.
-        open_api_path = '/openapi.yml'
-
         logger.debug(f'paths for open_api specs of each server')
         open_api_spec = {
             'openapi': '3.0.2',
@@ -143,20 +153,18 @@ class Automat:
                 'title': f'Automat',
             },
             'paths': {}
-
         }
         server_status = self.registry.get_registry()
+        tasks = []
         for tag in server_status:
             server = server_status[tag]['url']
-            path = 'http://' + str(server) + open_api_path
-            try:
-                response = await async_get_response(path, timeout=0.6)
-            except Exception as e:
-
-                logger.error(f'Time out contacting {path} -=== {e}')
+            tasks.append(self.get_swagger_paths(server)) #, timeout=0.6)
+        # do requests parallel
+        responses = await asyncio.gather(*tasks, return_exceptions=False)
+        for response in responses:
+            spec_paths = response.get('paths')
+            if not spec_paths:
                 continue
-            spec = yaml.load(response['text'], Loader=yaml.Loader)
-            spec_paths = spec['paths']
             # append the tag with the build tag ,
             # this way we can route to them from UI too...
             for spec_path in spec_paths:
