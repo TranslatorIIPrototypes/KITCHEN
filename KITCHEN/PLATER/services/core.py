@@ -3,6 +3,10 @@
 #
 #
 ####################
+import logging
+import requests
+import time
+import uvicorn
 
 from PLATER.services.validators.Validator import Validator
 from PLATER.services.config import config
@@ -10,8 +14,7 @@ from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
 from PLATER.services.util.logutil import LoggingUtil
 
-import uvicorn
-import requests
+
 
 logger = LoggingUtil.init_logging(__name__,
                                   #
@@ -58,9 +61,16 @@ class Plater:
 
     @staticmethod
     def send_heart_beat(automat_host, build_tag, heart_rate):
-        import time
+        logging.getLogger('requests').setLevel(logging.CRITICAL)
+        logger.debug(f'contacting {automat_host}')
         automat_heart_beat_url = f'{automat_host}/heartbeat'
+        plater_address = config.get('PLATER_SERVICE_ADDRESS')
+        if not plater_address:
+            logger.error('PLATER_SERVICE_ADDRESS environment variable not set. Please set this variable'
+                         'to the address of the host PLATER is running on.')
+            raise ValueError('PLATER_SERVICE_ADDRESS cannot be None when joining automat cluster.')
         payload = {
+            'host': plater_address,
             'tag': build_tag,
             'port': config.get('WEB_PORT', 8080)
         }
