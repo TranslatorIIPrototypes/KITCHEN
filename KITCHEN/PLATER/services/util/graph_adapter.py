@@ -47,19 +47,22 @@ class Neo4jHTTPDriver:
         """
         neo4j_db_labels_endpoint = "/db/data/labels"
         ping_url = f"{self._scheme}://{self._host}:{self._port}{neo4j_db_labels_endpoint}"
+        # if we can't contact neo4j, we should exit.
         try:
             import time
             now = time.time()
-            requests.get(ping_url, headers=self._header)
+            response = requests.get(ping_url, headers=self._header)
             later = time.time()
             time_taken = later - now
-            if time_taken > 5 : # greater than 5 seconds it's not healthy
+            if time_taken > 5:  # greater than 5 seconds it's not healthy
                 logger.warn(f"Contacting neo4j took more than 5 seconds ({time_taken}). Neo4j might be stressed.")
+            if response.status_code != 200:
+                raise Exception(f'server returned {response.status_code}')
         except Exception as e:
             logger.error(f"Error contacting Neo4j @ {ping_url} -- Exception raised -- {e}")
             logger.debug(traceback.print_exc())
             raise RuntimeError('Connection to Neo4j could not be established.')
-
+            exit(1)
 
     async def run(self, query):
         """
