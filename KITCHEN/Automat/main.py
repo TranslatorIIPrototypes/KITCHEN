@@ -18,5 +18,5 @@ if __name__=='__main__':
         app,
         host=web_server_host,
         port=web_server_port,
-        log_level='debug'
+        log_level='error'
     )

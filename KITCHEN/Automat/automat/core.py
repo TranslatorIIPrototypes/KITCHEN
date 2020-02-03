@@ -134,10 +134,10 @@ class Automat:
         await json_response(scope, receive, send)
 
     @staticmethod
-    async def get_swagger_paths(server_url):
+    async def get_swagger_paths(server_url, timeout=5*6):
         open_api_path = '/openapi.json'
         full_path = f'http://{server_url}{open_api_path}'
-        response = await async_get_json(full_path)
+        response = await async_get_json(full_path, timeout=timeout)
         if 'error' in response:
             logger.error(response['error'])
             return {}
@@ -158,7 +158,7 @@ class Automat:
         tasks = []
         for tag in server_status:
             server = server_status[tag]['url']
-            tasks.append(self.get_swagger_paths(server)) #, timeout=0.6)
+            tasks.append(self.get_swagger_paths(server))
         # do requests parallel
         responses = await asyncio.gather(*tasks, return_exceptions=False)
         for response in responses:

@@ -1,8 +1,9 @@
 import aiohttp
+
 from aiohttp.web import HTTPException
 import traceback
-from Automat.automat.config import config
-from Automat.automat.util.logutil import LoggingUtil
+from automat.config import config
+from automat.util.logutil import LoggingUtil
 
 
 logger = LoggingUtil.init_logging(__name__,
@@ -12,13 +13,14 @@ logger = LoggingUtil.init_logging(__name__,
                                   )
 
 
-async def async_get_json(url, headers = {}):
+async def async_get_json(url, headers={}, timeout=5*6):
     """
         Gets json response from url asyncronously.
     """
-    async with aiohttp.ClientSession() as session :
+    client_timeout = aiohttp.ClientTimeout(connect=timeout)
+    async with aiohttp.ClientSession(timeout=client_timeout) as session:
         try:
-            async with session.get(url, headers= headers) as response:
+            async with session.get(url, headers=headers) as response:
                 if response.status != 200:
                     error = f"Failed to get response from {url}. Status code {response.status}"
                     logger.error(error)
@@ -40,9 +42,9 @@ async def async_get_json(url, headers = {}):
             }
 
 
-
-async def async_post_json(url, headers= {} , body = ''):
-    async with aiohttp.ClientSession() as session:
+async def async_post_json(url, headers={}, body='', timeout=5*6):
+    client_timeout = aiohttp.ClientTimeout(connect=timeout)
+    async with aiohttp.ClientSession(timeout=client_timeout) as session:
         try:
             async with session.post(url, data=body, headers=headers) as response:
                 if response.status != 200:
@@ -59,24 +61,25 @@ async def async_post_json(url, headers= {} , body = ''):
             }
 
 
-async def async_get_text(url,headers = {}):
+async def async_get_text(url,headers={}):
     """
         Gets text response from url asyncronously
     """
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers= headers) as response:
+        async with session.get(url, headers=headers) as response:
             if response.status != 200:
                 logger.error(f'Failed to get response from {url}, returned status : {response.status}')
                 return ''
             return await response.text()
 
-async def async_get_response(url, headers= {}, timeout=5*60):
+
+async def async_get_response(url, headers={}, timeout=5*60):
     """
     Returns the whole reponse object
     """
-    timeout = aiohttp.ServerTimeoutError
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers= headers) as response:
+    client_timeout = aiohttp.ClientTimeout(connect=timeout)
+    async with aiohttp.ClientSession(timeout=client_timeout) as session:
+        async with session.get(url, headers=headers) as response:
             try:
                 json = await response.json()
             except:

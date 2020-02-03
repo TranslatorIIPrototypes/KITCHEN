@@ -42,6 +42,7 @@ class Registry:
         TTL_ALIVE: 'alive'
     }
     instance = None
+
     def __init__(self, age: int):
         if not Registry.instance:
             Registry.instance = Registry.__Registry(age)
