@@ -20,15 +20,10 @@ def parse_args(args):
     if args.automat_host:
         logger.debug(f'Running in clustered mode about to join {args.automat_host}')
 
-        heart_rate = args.heart_rate
-        # If heart rate was not provided default to this.
-        if not heart_rate:
-            heart_rate = 0.5
-
         # start heart beat thread.
         heart_beat_thread = threading.Thread(
             target=Plater.send_heart_beat,
-            args=(args.automat_host, build_tag, heart_rate)
+            args=(args.automat_host, build_tag)
         )
         heart_beat_thread.start()
 
@@ -51,12 +46,6 @@ if __name__=='__main__':
         help='Needs to be a full http/https url. Eg. http://<automat_location>:<automat_port>'
              'If you have an Automat (https://github.com/TranslatorIIPrototypes/KITCHEN/tree/master/KITCHEN/Automat) '
              'cluster and you\'d like this instance to be accessible via the Automat interface.'
-    )
-
-    parser.add_argument(
-        '-r',
-        '--heart_rate',
-        help='The rate (in seconds) at which to send heartbeats to Automat.'
     )
 
 

@@ -60,7 +60,9 @@ class Plater:
         )
 
     @staticmethod
-    def send_heart_beat(automat_host, build_tag, heart_rate):
+    def send_heart_beat(automat_host, build_tag):
+        import time
+        heart_rate = config.get('heart_rate', 30)
         logging.getLogger('requests').setLevel(logging.CRITICAL)
         logger.debug(f'contacting {automat_host}')
         automat_heart_beat_url = f'{automat_host}/heartbeat'
@@ -76,7 +78,8 @@ class Plater:
         }
         while True:
             try:
-                requests.post(automat_heart_beat_url, json=payload, timeout=0.5)
+                resp = requests.post(automat_heart_beat_url, json=payload, timeout=0.5)
+                logger.debug(f'heartbeat to {automat_host} returned {resp.status_code}')
             except Exception as e:
                 logger.error(f'[X] Error contacting automat sever {e}')
             time.sleep(heart_rate)
