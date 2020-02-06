@@ -90,7 +90,7 @@ class Automat:
 
     # /registry
     async def handle_registry(self, scope, receive, send):
-        await Automat.send_json_response(scope, receive, send, self.registry.get_registry())
+        await Automat.send_json_response(scope, receive, send, list(self.registry.get_registry().keys()))
 
     # /<Swagger ui files>
     @staticmethod
