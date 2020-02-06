@@ -1,9 +1,7 @@
 aiofiles==0.4.0
 aiohttp==3.0
-pyaml==19.12.0
 pytest==5.3.2
 requests==2.22.0
 starlette==0.13.0
 uvicorn==0.11.1
 swagger_ui_bundle
-git+https://github.com/NCATS-Tangerine/kgx.git

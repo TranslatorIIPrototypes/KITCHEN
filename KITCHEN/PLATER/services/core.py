@@ -8,7 +8,6 @@ import requests
 import time
 import uvicorn
 
-from PLATER.services.validators.Validator import Validator
 from PLATER.services.config import config
 from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
@@ -32,7 +31,6 @@ class Plater:
         self.config = config
         if validate:
             logger.debug('[0] Validation turned on.')
-            self.validator = Validator()
         self.build_tag = build_tag
         self.graph_adapter = GraphInterface(
             self.config.get('NEO4J_HOST'),
