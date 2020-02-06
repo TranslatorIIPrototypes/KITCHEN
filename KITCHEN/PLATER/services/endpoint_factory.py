@@ -1,3 +1,4 @@
+import copy
 from starlette.requests import Request
 from starlette.responses import JSONResponse, HTMLResponse
 from starlette.schemas import OpenAPIResponse
@@ -8,7 +9,9 @@ from starlette.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
 from PLATER.services.util.logutil import LoggingUtil
+from PLATER.services.util.question import Question
 from PLATER.services.config import config
+
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
@@ -29,6 +32,7 @@ class EndpointFactory:
     OPEN_API_ENDPOINT_TYPE = 'open_api'
     GRAPH_SCHEMA_ENDPOINT_TYPE = 'graph_schema'
     SWAGGER_UI_ENDPOINT = 'swagger_ui'
+    REASONER_API_ENDPOINT = 'reasonerapi'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -39,6 +43,7 @@ class EndpointFactory:
             EndpointFactory.OPEN_API_ENDPOINT_TYPE: lambda kwargs: self.create_open_api_schema_endpoint(**kwargs),
             EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint(),
             EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(**kwargs),
+            EndpointFactory.REASONER_API_ENDPOINT: lambda kwargs: self.create_reasoner_api_endpoint()
         }
 
     def create_app(self, build_tag):
@@ -117,6 +122,14 @@ class EndpointFactory:
             )
         )
 
+        # add reasoner api endpoint
+
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.REASONER_API_ENDPOINT
+            )
+        )
+
         routes = list(map(lambda endpoint: endpoint, endpoints))
         app = Starlette(
             debug=int(config.get('logging_level')) == 10,
@@ -186,17 +199,19 @@ class EndpointFactory:
         :rtype: Callable
         """
 
-
         async def get_handler(request: Request) -> OpenAPIResponse:
 
             paths = {}
 
             graph_schema = self.graph_interface.get_schema()
+            # lets hold on to an example so we can use it later in reasoner api spec.
+            last_curie = ''
 
             for source_node in graph_schema:
                 target_nodes = graph_schema[source_node]
                 # add /<source_type>/curie path
                 example = await self.graph_interface.get_examples(source_node)
+                last_curie = example[0].get('id', '') if example else last_curie
                 paths[f'/{source_node}/{{curie}}'] = {
                     'get': {
                         'description': f'Returns `{source_node}` based on `curie`.',
@@ -329,6 +344,208 @@ class EndpointFactory:
                 }
             }
 
+            # adding paths to reasoner api in opane api spec
+            all_templates = Question.\
+                transform_schema_to_question_template(
+                self.graph_interface.get_schema())
+            example_question_templates = all_templates[:1]
+            paths['/reasonerapi'] = {
+                 'get': {
+                     'description': 'Returns a list of question templates '
+                                    'that can be used to query this plater instance/',
+                     'operationId': 'get_question_templates',
+                     'parameters': [],
+                     'responses': {
+                         '200': {
+                             'description': 'OK',
+                             'content': {
+                                 'application/json': {
+                                     'schema': {
+                                         'type': 'object',
+                                         'example': example_question_templates
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 },
+                'post': {
+                    'description': 'Given a question graph return quetion graph plus answers.',
+                    'operationId': 'post_question',
+                    'requestBody': {
+                        'description': 'Reasoner api question.',
+                        'content': {
+                            'application/json': {
+                                'schema': {
+                                    'type': 'object',
+                                    'example': {
+                                      "question_graph": {
+                                        "edges": [
+                                          {
+                                            "id": "e0",
+                                            "source_id": "n1",
+                                            "target_id": "n2",
+                                            "type": "similar_to"
+                                          }
+                                        ],
+                                        "nodes": [
+                                          {
+                                            "curie": "CHEBI:18379",
+                                            "id": "n1",
+                                            "type": "named_thing"
+                                          },
+                                          {
+                                            "id": "n2",
+                                            "type": "named_thing"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                }
+                            }
+                        },
+                        'allowEmptyValue': False,
+                        'required': True
+                    },
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': {
+                                              "answers": [
+                                                {
+                                                  "edge_bindings": [
+                                                    {
+                                                      "e0": {
+                                                        "edge_label": "similar_to",
+                                                        "object": "CHEBI:48819",
+                                                        "subject": "CHEBI:18379"
+                                                      }
+                                                    }
+                                                  ],
+                                                  "node_bindings": [
+                                                    {
+                                                      "n1": {
+                                                        "category": [
+                                                          "chemical_substance"
+                                                        ],
+                                                        "id": "CHEBI:18379",
+                                                        "name": "nitrile",
+                                                        "simple_smiles": "*C#N"
+                                                      }
+                                                    },
+                                                    {
+                                                      "n2": {
+                                                        "category": [
+                                                          "chemical_substance"
+                                                        ],
+                                                        "id": "CHEBI:48819",
+                                                        "name": "cyano group",
+                                                        "simple_smiles": "*C#N"
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "edge_bindings": [
+                                                    {
+                                                      "e0": {
+                                                        "edge_label": "similar_to",
+                                                        "object": "CHEBI:80291",
+                                                        "subject": "CHEBI:18379"
+                                                      }
+                                                    }
+                                                  ],
+                                                  "node_bindings": [
+                                                    {
+                                                      "n1": {
+                                                        "category": [
+                                                          "chemical_substance"
+                                                        ],
+                                                        "id": "CHEBI:18379",
+                                                        "name": "nitrile",
+                                                        "simple_smiles": "*C#N"
+                                                      }
+                                                    },
+                                                    {
+                                                      "n2": {
+                                                        "category": [
+                                                          "chemical_substance"
+                                                        ],
+                                                        "id": "CHEBI:80291",
+                                                        "name": "aliphatic nitrile",
+                                                        "simple_smiles": "*C#N"
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "edge_bindings": [
+                                                    {
+                                                      "e0": {
+                                                        "edge_label": "similar_to",
+                                                        "object": "CHEBI:2590",
+                                                        "subject": "CHEBI:18379"
+                                                      }
+                                                    }
+                                                  ],
+                                                  "node_bindings": [
+                                                    {
+                                                      "n1": {
+                                                        "category": [
+                                                          "chemical_substance"
+                                                        ],
+                                                        "id": "CHEBI:18379",
+                                                        "name": "nitrile",
+                                                        "simple_smiles": "*C#N"
+                                                      }
+                                                    },
+                                                    {
+                                                      "n2": {
+                                                        "category": [
+                                                          "chemical_substance"
+                                                        ],
+                                                        "id": "CHEBI:2590",
+                                                        "name": "Alkylnitrile",
+                                                        "simple_smiles": "*C#N"
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ],
+                                              "question_graph": {
+                                                "edges": [
+                                                  {
+                                                    "id": "e0",
+                                                    "source_id": "n1",
+                                                    "target_id": "n2",
+                                                    "type": "similar_to"
+                                                  }
+                                                ],
+                                                "nodes": [
+                                                  {
+                                                    "curie": "CHEBI:18379",
+                                                    "id": "n1",
+                                                    "type": "named_thing"
+                                                  },
+                                                  {
+                                                    "id": "n2",
+                                                    "type": "named_thing"
+                                                  }
+                                                ]
+                                              }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             # Add build tag to all the paths
             for path in paths:
                 for method in paths[path]:
@@ -387,6 +604,35 @@ class EndpointFactory:
             return HTMLResponse(content=html_content, media_type='text/html')
 
         return Route('/apidocs', swagger_doc_handler)
+
+    def create_reasoner_api_endpoint(self):
+        """
+        Creates an endpoint for handling get and post requests to reasoner api endpoint.
+
+        Get endpoint returns list of questions supported by the instance as templates.
+        :return:
+        """
+        graph_interface = self.graph_interface
+
+        async def get_handler(request: Request) -> JSONResponse:
+            templates = Question.transform_schema_to_question_template(graph_interface.get_schema())
+            return JSONResponse(templates)
+
+        async def post_handler(request: Request) -> JSONResponse:
+            try:
+                request_json = await request.json()
+                question = Question(request_json)
+            except Exception as e:
+                 return JSONResponse({"Error": f"{str(type(e))} - {e}"})
+            response = await question.answer(graph_interface)
+            return JSONResponse(response)
+
+        async def wrapper(request: Request) -> JSONResponse:
+            if request.method == 'GET':
+                return await get_handler(request)
+            else:
+                return await post_handler(request)
+        return Route('/reasonerapi', wrapper, methods=['GET', 'POST'])
 
     def create_endpoint(self, endpoint_type, **kwargs) -> Route:
         """

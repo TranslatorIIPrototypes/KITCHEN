@@ -262,6 +262,9 @@ class GraphInterface:
                 final = list(map(lambda node: node[source], self.driver.convert_to_dict(response)))
                 return final
 
+        def convert_to_dict(self, result):
+            return self.driver.convert_to_dict(result)
+
     instance = None
 
     def __init__(self, host, port, auth):
