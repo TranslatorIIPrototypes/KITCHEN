@@ -14,7 +14,9 @@ class Question:
         paths = []
         returns = []
         for edge in edges:
-            path = f"({edge['source_id']})-[{edge['id']}:{edge.get('type', '')}]->({edge['target_id']}) "
+            edge_type = edge.get('type')
+            edge_type = ':' + edge_type if edge_type else ''
+            path = f"({edge['source_id']})-[{edge['id']}{edge_type}]->({edge['target_id']}) "
             paths += [path]
             returns.append(edge['id'])
 
@@ -22,11 +24,11 @@ class Question:
         for node in nodes:
             node_type_statements += [f"{node['id']}:{node['type']}"]
             if 'curie' in node:
-                node_type_statements += [f"{node['id']}.id = '{node['curie']}'"]
+                node_type_statements += [f"{node['id']}.id = \"{node['curie']}\""]
             returns.append(node['id'])
 
-        match_clause = ' ,\n'.join(paths)
-        where_clause = ' AND \n'.join(node_type_statements)
+        match_clause = ' , '.join(paths)
+        where_clause = ' AND '.join(node_type_statements)
         return_clause = ', '.join(returns)
 
         cypher = f"""MATCH {match_clause}  WHERE {where_clause} RETURN {return_clause} """
@@ -39,20 +41,27 @@ class Question:
         node_keys = list(map(lambda node: node['id'], self._question_json['question_graph']['nodes']))
         edge_keys = list(map(lambda edge: edge['id'], self._question_json['question_graph']['edges']))
         answer_bindings = []
+        knowledge_graph = {
+            'nodes': [],
+            'edges': []
+        }
         for result in results_dict:
             answer = {
-                'node_bindings':[],
-                'edge_bindings':[]
+                'node_bindings': [],
+                'edge_bindings': []
             }
             for key in result:
                 if key in node_keys:
-                    answer['node_bindings'].append({key: result[key]})
+                    answer['node_bindings'].append({key: result[key]['id']})
+                    knowledge_graph['nodes'].append(result[key])
                     continue
                 if key in edge_keys:
-                    answer['edge_bindings'].append({key: result[key]})
+                    answer['edge_bindings'].append({key: result[key]['id']})
+                    knowledge_graph['edges'].append(result[key])
                     continue
             answer_bindings.append(answer)
         self._question_json['answers'] = answer_bindings
+        self._question_json['knowledge_graph'] = knowledge_graph
         return self._question_json
 
     def __validate(self):
