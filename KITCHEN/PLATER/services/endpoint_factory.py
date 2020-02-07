@@ -370,7 +370,7 @@ class EndpointFactory:
                      }
                  },
                 'post': {
-                    'description': 'Given a question graph return quetion graph plus answers.',
+                    'description': 'Given a question graph return question graph plus answers.',
                     'operationId': 'post_question',
                     'requestBody': {
                         'description': 'Reasoner api question.',

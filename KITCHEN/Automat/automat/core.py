@@ -69,8 +69,29 @@ class Automat:
             for spec_path in spec_paths:
                 new_path = f'/{tag}{spec_path}'
                 open_api_spec['paths'][new_path] = spec_paths[spec_path]
-        schema = yaml.dump(open_api_spec, default_flow_style=False).encode("utf-8")
-        response = PlainTextResponse(schema)
+        open_api_spec['paths']['/registry'] = {
+            'get': {
+                'description': 'Returns list of available PLATER instances.'
+                               'An entry from this list can be a prefix to route requests to specific PLATER backend',
+                'operationId': 'get_question_templates',
+                'parameters': [],
+                'tags': ['automat'],
+                'responses': {
+                     '200': {
+                         'description': 'OK',
+                         'content': {
+                             'application/json': {
+                                 'schema': {
+                                     'type': 'object',
+                                     'example': ['plater-1', 'plater-2']
+                                 }
+                             }
+                         }
+                     }
+                 }
+            }
+        }
+        response = JSONResponse(open_api_spec)
         await response(scope, receive, send)
 
     # /<x>/*
