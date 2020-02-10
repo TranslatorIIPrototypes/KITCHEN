@@ -1,4 +1,5 @@
 import copy
+from functools import reduce
 from PLATER.services.util.graph_adapter import GraphInterface
 
 class Question:
@@ -39,7 +40,8 @@ class Question:
         results = await graph_interface.run_cypher(cypher)
         results_dict = graph_interface.convert_to_dict(results)
         node_keys = list(map(lambda node: node['id'], self._question_json['question_graph']['nodes']))
-        edge_keys = list(map(lambda edge: edge['id'], self._question_json['question_graph']['edges']))
+        edge_map = { edge['id'] : edge for edge in self._question_json['question_graph']['edges']}
+        edge_keys = set(edge_map.keys())
         answer_bindings = []
         knowledge_graph = {
             'nodes': [],
@@ -57,6 +59,11 @@ class Question:
                     continue
                 if key in edge_keys:
                     answer['edge_bindings'].append({key: result[key]['id']})
+                    # Use question graph id to resolve actual result id
+                    source_key = edge_map[key]['source_id']
+                    target_key = edge_map[key]['target_id']
+                    result[key]['source_id'] = result[source_key]['id']
+                    result[key]['target_id'] = result[target_key]['id']
                     knowledge_graph['edges'].append(result[key])
                     continue
             answer_bindings.append(answer)
@@ -78,6 +85,15 @@ class Question:
             assert 'id' in edge
             assert 'source_id' in edge
             assert 'target_id' in edge
+        # make sure everything mentioned in edges is actually refering something in the node list.
+        node_ids = list(map(lambda node: node['id'], question_graph['nodes']))
+        mentions = reduce(lambda accu, value: accu + value,
+                          list(map(lambda edge: [
+                              edge['source_id'],
+                              edge['target_id']
+                          ], question_graph['edges'])), [])
+        assert reduce(lambda x, y: x and (y in node_ids), mentions, True), "Some edge metions don't have matching " \
+                                                                           "nodes. Please check question graph."
 
     @staticmethod
     def transform_schema_to_question_template(graph_schema):
