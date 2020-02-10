@@ -49,16 +49,16 @@ class Question:
         }
         for result in results_dict:
             answer = {
-                'node_bindings': [],
-                'edge_bindings': []
+                'node_bindings': {},
+                'edge_bindings': {}
             }
             for key in result:
                 if key in node_keys:
-                    answer['node_bindings'].append({key: result[key]['id']})
+                    answer['node_bindings'].update({key: result[key]['id']})
                     knowledge_graph['nodes'].append(result[key])
                     continue
                 if key in edge_keys:
-                    answer['edge_bindings'].append({key: result[key]['id']})
+                    answer['edge_bindings'].update({key: result[key]['id']})
                     # Use question graph id to resolve actual result id
                     source_key = edge_map[key]['source_id']
                     target_key = edge_map[key]['target_id']
