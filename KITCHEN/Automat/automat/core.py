@@ -96,7 +96,7 @@ class Automat:
 
     # /<x>/*
     async def handle_route_to_backend(self, scope, receive, send, backend_server_url, path):
-        final_path = f'http://{backend_server_url}/{"/".join(path)}'
+        final_path = f'http://{backend_server_url}/{"/".join(path)}?{scope["query_string"].decode("utf-8")}'
         logger.debug(f'[0] proxing request to {final_path}')
         if scope['method'] == 'GET':
             response = await async_get_json(final_path, Automat.parse_headers_to_dict(scope['headers']))

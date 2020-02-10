@@ -6,6 +6,7 @@ from starlette.routing import Route
 from starlette.applications import Starlette
 from starlette.schemas import SchemaGenerator
 from starlette.staticfiles import StaticFiles
+import urllib.parse
 from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
 from PLATER.services.util.logutil import LoggingUtil
@@ -592,7 +593,11 @@ class EndpointFactory:
                                 'application/json': {
                                     'schema': {
                                         'type': 'object',
-                                        'example': example_question_templates
+                                        'example': [{
+                                            "source_type": "chemical_substance",
+                                            "target_type": "chemical_substance",
+                                            "edge_type": "similar_to"
+                                        }]
                                     }
                                 }
                             }
@@ -665,6 +670,8 @@ class EndpointFactory:
             source_id = request.query_params.get('source', None)
             target_id = request.query_params.get('target', None)
             if source_id or target_id:
+                source_id = urllib.parse.unquote_plus(source_id) if source_id else None
+                target_id = urllib.parse.unquote_plus(target_id) if target_id else None
                 minischema = []
                 mini_schema_raw = await self.graph_interface.get_mini_schema(source_id, target_id)
                 for source_id in mini_schema_raw:
