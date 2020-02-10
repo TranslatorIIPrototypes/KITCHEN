@@ -674,18 +674,12 @@ class EndpointFactory:
                 target_id = urllib.parse.unquote_plus(target_id) if target_id else None
                 minischema = []
                 mini_schema_raw = await self.graph_interface.get_mini_schema(source_id, target_id)
-                for source_id in mini_schema_raw:
-                    source = mini_schema_raw[source_id]
-                    source_types = await self.bl_helper.get_most_specific_concept(source['types'])
-                    for target_id in source['targets']:
-                        target = source['targets'][target_id]
-                        target_types = await self.bl_helper.get_most_specific_concept(target['types'])
-                        edges = target['edges']
-                        for source_type in source_types:
-                            for target_type in target_types:
-                                for edge in edges:
-                                    triplet = (source_type, edge, target_type)
-                                    minischema.append(triplet)
+                for row in mini_schema_raw:
+                    source_labels = await self.bl_helper.get_most_specific_concept(row['source_label'])
+                    target_labels = await self.bl_helper.get_most_specific_concept(row['target_label'])
+                    for source_type in source_labels:
+                        for target_type in target_labels:
+                            minischema.append((source_type, row['predicate'], target_type))
                 minischema = list(set(minischema)) # remove dups
                 return JSONResponse(list(
                     map(lambda x: {'source_type': x[0], 'target_type': x[2], 'edge_type': x[1]}, minischema)
