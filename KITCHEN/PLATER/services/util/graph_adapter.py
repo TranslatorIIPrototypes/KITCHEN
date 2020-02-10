@@ -156,7 +156,7 @@ class GraphInterface:
                            RETURN DISTINCT source_label, predicate, target_label
                            """
                 result = self.driver.run_sync(query)
-                structured = self.driver.convert_to_dict(result)
+                structured = self.convert_to_dict(result)
                 schema_bag = {}
                 for triplet in structured:
                     subject = triplet['source_label']
@@ -170,6 +170,47 @@ class GraphInterface:
                         schema_bag[subject][objct].append(predicate)
                 self.schema = schema_bag
             return self.schema
+
+        async def get_mini_schema(self, source_id, target_id):
+            """
+            Given either id of source and/or target returns predicates that relate them. And their
+            possible labels.
+            :param source_id:
+            :param target_id:
+            :return:
+            """
+            source_id_syntaxed = f"{{id: \"{source_id}\"}}" if source_id else ''
+            target_id_syntaxed = f"{{id: \"{target_id}\"}}" if target_id else ''
+            query = f"""
+                            MATCH (a{source_id_syntaxed})-[x]->(b{target_id_syntaxed}) WITH
+                                filter(la in labels(a) where not la in ['Concept']) as las,
+                                filter(lb in labels(b) where not lb in ['Concept']) as lbs,
+                                type(x) as predicate,
+                                a.id as source_id,
+                                b.id as target_id
+                            UNWIND las as source_label
+                            UNWIND lbs as target_label
+                            RETURN DISTINCT source_label, predicate, target_label, source_id, target_id
+                        """
+            response = await self.driver.run(query)
+            response = self.convert_to_dict(response)
+            source_dict = {}
+            for row in response:
+                source_dict[row['source_id']] = source_dict.get(row['source_id'], {})
+                current = source_dict[row['source_id']]
+                current['targets'] = current.get('targets', {})
+                current['types'] = current.get('types', [])
+                if row['source_label'] not in current['types']:
+                    current['types'].append(row['source_label'])
+                trgt = row['target_id']
+                current['targets'][trgt] = current['targets'].get(trgt, {'types': [], 'edges': []})
+                if not row['target_label'] in current['targets'][trgt]['types']:
+                    current['targets'][trgt]['types'].append(row['target_label'])
+                if not row['predicate'] in current['targets'][trgt]['edges']:
+                    current['targets'][trgt]['edges'].append(row['predicate'])
+
+            return source_dict
+
 
         async def get_node(self, node_type: str, curie: str) -> dict:
             """

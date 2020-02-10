@@ -10,7 +10,9 @@ from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
 from PLATER.services.util.logutil import LoggingUtil
 from PLATER.services.util.question import Question
+from PLATER.services.util.bl_helper import BLHelper
 from PLATER.services.config import config
+
 
 
 logger = LoggingUtil.init_logging(__name__,
@@ -33,9 +35,11 @@ class EndpointFactory:
     GRAPH_SCHEMA_ENDPOINT_TYPE = 'graph_schema'
     SWAGGER_UI_ENDPOINT = 'swagger_ui'
     REASONER_API_ENDPOINT = 'reasonerapi'
+    SIMPLE_ONE_HOP_SPEC = 'simple'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
+        self.bl_helper = BLHelper(config.get('BL_HOST', 'https://bl-lookup-sri.renci.org'))
         self._endpoint_loader = {
             EndpointFactory.HOP_ENDPOINT_TYPE: lambda kwargs: self.create_hop_endpoint(**kwargs),
             EndpointFactory.NODE_ENDPOINT_TYPE: lambda kwargs: self.create_node_endpoint(**kwargs),
@@ -43,7 +47,8 @@ class EndpointFactory:
             EndpointFactory.OPEN_API_ENDPOINT_TYPE: lambda kwargs: self.create_open_api_schema_endpoint(**kwargs),
             EndpointFactory.GRAPH_SCHEMA_ENDPOINT_TYPE: lambda kwargs: self.create_graph_schema_endpoint(),
             EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(**kwargs),
-            EndpointFactory.REASONER_API_ENDPOINT: lambda kwargs: self.create_reasoner_api_endpoint()
+            EndpointFactory.REASONER_API_ENDPOINT: lambda kwargs: self.create_reasoner_api_endpoint(),
+            EndpointFactory.SIMPLE_ONE_HOP_SPEC: lambda kwargs: self.create_simple_one_hop_spec_endpoint(),
         }
 
     def create_app(self, build_tag):
@@ -127,6 +132,14 @@ class EndpointFactory:
         endpoints.append(
             self.create_endpoint(
                 EndpointFactory.REASONER_API_ENDPOINT
+            )
+        )
+
+        # add one hop
+
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.SIMPLE_ONE_HOP_SPEC
             )
         )
 
@@ -546,6 +559,47 @@ class EndpointFactory:
                 }
             }
 
+
+            paths['/simple_spec'] = {
+                'get': {
+                    'description': 'Returns a list of available predicates when choosing a single source or target '
+                                   'curie. Calling this endpoint with no parameters will returns all available hops '
+                                   'for all types.',
+                    'operationId': 'get_simple_spec',
+                    'parameters': [{
+                            'name': 'source',
+                            'in': 'query',
+                            'description': f'The curie of source that needs to be fetched.',
+                            'required': False,
+                            'schema': {
+                                'type': 'string',
+                                'example': 'CHEBI:33216'
+                            }
+                        }, {
+                            'name': 'target',
+                            'in': 'query',
+                            'description': f'The curie of target that needs to be fetched.',
+                            'required': False,
+                            'schema': {
+                                'type': 'string',
+                                'example': 'NCBIGene:1'
+                            }
+                        }],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': example_question_templates
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             # Add build tag to all the paths
             for path in paths:
                 for method in paths[path]:
@@ -605,6 +659,45 @@ class EndpointFactory:
 
         return Route('/apidocs', swagger_doc_handler)
 
+    def create_simple_one_hop_spec_endpoint(self):
+
+        async def get_handler(request: Request) -> JSONResponse:
+            source_id = request.query_params.get('source', None)
+            target_id = request.query_params.get('target', None)
+            if source_id or target_id:
+                minischema = []
+                mini_schema_raw = await self.graph_interface.get_mini_schema(source_id, target_id)
+                for source_id in mini_schema_raw:
+                    source = mini_schema_raw[source_id]
+                    source_types = await self.bl_helper.get_most_specific_concept(source['types'])
+                    for target_id in source['targets']:
+                        target = source['targets'][target_id]
+                        target_types = await self.bl_helper.get_most_specific_concept(target['types'])
+                        edges = target['edges']
+                        for source_type in source_types:
+                            for target_type in target_types:
+                                for edge in edges:
+                                    triplet = (source_type, edge, target_type)
+                                    minischema.append(triplet)
+                minischema = list(set(minischema)) # remove dups
+                return JSONResponse(list(
+                    map(lambda x: {'source_type': x[0], 'target_type': x[2], 'edge_type': x[1]}, minischema)
+                ))
+            else:
+                schema = self.graph_interface.get_schema()
+                reformatted_schema = []
+                for source_type in schema:
+                    for target_type in schema[source_type]:
+                        for edge in schema[source_type][target_type]:
+                            reformatted_schema.append({
+                                'source_type': source_type,
+                                'target_type': target_type,
+                                'edge_type': edge
+                            })
+                return JSONResponse(reformatted_schema)
+
+        return Route('/simple_spec', get_handler)
+
     def create_reasoner_api_endpoint(self):
         """
         Creates an endpoint for handling get and post requests to reasoner api endpoint.
@@ -648,3 +741,4 @@ class EndpointFactory:
         if endpoint_router is None:
             raise TypeError(f"Unable to load endpoint type: {endpoint_type}")
         return endpoint_router(kwargs)
+
