@@ -564,8 +564,8 @@ class EndpointFactory:
             paths['/simple_spec'] = {
                 'get': {
                     'description': 'Returns a list of available predicates when choosing a single source or target '
-                                   'curie. Calling this endpoint with no parameters will returns all available hops '
-                                   'for all types.',
+                                   'curie. Calling this endpoint with no query parameters will return all '
+                                   'possible hops for all types.',
                     'operationId': 'get_simple_spec',
                     'parameters': [{
                             'name': 'source',
