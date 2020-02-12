@@ -1,10 +1,17 @@
 ## PLATER
 
 PLATER is a service to stand up REST endpoint over a neo4j database.
+There are some restrictions on the data structure of the Neo4j backend to be fully utilized through PLATER.
+
+> **NEO4J data structure restrictions:**
+> * All nodes should have an `id` to be searchable (Used in querying single Nodes)
+> * All edges should have an `id` to be searchable (Used in generating ReasonerAPI)
+> * Nodes labeled `Concept` are ignored. 
 
 ### Installation
 
 To run the web server directly:
+
 Create a virtual Environment and activate.
 
     cd <PLATER-ROOT>
