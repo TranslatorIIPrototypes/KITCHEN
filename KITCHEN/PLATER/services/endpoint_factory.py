@@ -359,10 +359,29 @@ class EndpointFactory:
             }
 
             # adding paths to reasoner api in opane api spec
-            all_templates = Question.\
-                transform_schema_to_question_template(
-                self.graph_interface.get_schema())
-            example_question_templates = all_templates[:1]
+            example_questions = Question.transform_schema_to_question_template({'gene': {'chemical_substance': ['is_affected_by']}})
+            example_question = example_questions[0]
+            node_ids = list(map(lambda x: x[Question.QG_ID_KEY], example_question[Question.QUERY_GRAPH_KEY][Question.NODES_LIST_KEY]))
+            edge_ids = list(map(lambda x: x[Question.QG_ID_KEY], example_question[Question.QUERY_GRAPH_KEY][Question.EDGES_LIST_KEY]))
+            db_returns = {
+                key : {
+                    'id': f'{key}\'s DB ID',
+                    'name': f'{key} has name',
+                }
+                for key in node_ids + edge_ids}
+            db_returns.update({
+                f'type_{key}': f"{key}'s type" for key in edge_ids + node_ids
+            })
+
+
+            class GI_MOCK:
+                pass
+            async def run(a, b): return None
+            GI_MOCK.run_cypher = run
+            GI_MOCK.convert_to_dict = lambda x,y :  [db_returns]
+            q = Question(example_question)
+            answer_eg = await q.answer(GI_MOCK())
+
             paths['/reasonerapi'] = {
                  'get': {
                      'description': 'Returns a list of question templates '
@@ -376,7 +395,7 @@ class EndpointFactory:
                                  'application/json': {
                                      'schema': {
                                          'type': 'object',
-                                         'example': example_question_templates
+                                         'example': example_questions
                                      }
                                  }
                              }
@@ -392,29 +411,7 @@ class EndpointFactory:
                             'application/json': {
                                 'schema': {
                                     'type': 'object',
-                                    'example': {
-                                      "question_graph": {
-                                        "edges": [
-                                          {
-                                            "id": "e0",
-                                            "source_id": "n1",
-                                            "target_id": "n2",
-                                            "type": "similar_to"
-                                          }
-                                        ],
-                                        "nodes": [
-                                          {
-                                            "curie": "CHEBI:18379",
-                                            "id": "n1",
-                                            "type": "named_thing"
-                                          },
-                                          {
-                                            "id": "n2",
-                                            "type": "named_thing"
-                                          }
-                                        ]
-                                      }
-                                    }
+                                    'example': example_question
                                 }
                             }
                         },
@@ -428,130 +425,7 @@ class EndpointFactory:
                                 'application/json': {
                                     'schema': {
                                         'type': 'object',
-                                        'example': {
-                                              "answers": [
-                                                {
-                                                  "edge_bindings": [
-                                                    {
-                                                      "e0": {
-                                                        "edge_label": "similar_to",
-                                                        "object": "CHEBI:48819",
-                                                        "subject": "CHEBI:18379"
-                                                      }
-                                                    }
-                                                  ],
-                                                  "node_bindings": [
-                                                    {
-                                                      "n1": {
-                                                        "category": [
-                                                          "chemical_substance"
-                                                        ],
-                                                        "id": "CHEBI:18379",
-                                                        "name": "nitrile",
-                                                        "simple_smiles": "*C#N"
-                                                      }
-                                                    },
-                                                    {
-                                                      "n2": {
-                                                        "category": [
-                                                          "chemical_substance"
-                                                        ],
-                                                        "id": "CHEBI:48819",
-                                                        "name": "cyano group",
-                                                        "simple_smiles": "*C#N"
-                                                      }
-                                                    }
-                                                  ]
-                                                },
-                                                {
-                                                  "edge_bindings": [
-                                                    {
-                                                      "e0": {
-                                                        "edge_label": "similar_to",
-                                                        "object": "CHEBI:80291",
-                                                        "subject": "CHEBI:18379"
-                                                      }
-                                                    }
-                                                  ],
-                                                  "node_bindings": [
-                                                    {
-                                                      "n1": {
-                                                        "category": [
-                                                          "chemical_substance"
-                                                        ],
-                                                        "id": "CHEBI:18379",
-                                                        "name": "nitrile",
-                                                        "simple_smiles": "*C#N"
-                                                      }
-                                                    },
-                                                    {
-                                                      "n2": {
-                                                        "category": [
-                                                          "chemical_substance"
-                                                        ],
-                                                        "id": "CHEBI:80291",
-                                                        "name": "aliphatic nitrile",
-                                                        "simple_smiles": "*C#N"
-                                                      }
-                                                    }
-                                                  ]
-                                                },
-                                                {
-                                                  "edge_bindings": [
-                                                    {
-                                                      "e0": {
-                                                        "edge_label": "similar_to",
-                                                        "object": "CHEBI:2590",
-                                                        "subject": "CHEBI:18379"
-                                                      }
-                                                    }
-                                                  ],
-                                                  "node_bindings": [
-                                                    {
-                                                      "n1": {
-                                                        "category": [
-                                                          "chemical_substance"
-                                                        ],
-                                                        "id": "CHEBI:18379",
-                                                        "name": "nitrile",
-                                                        "simple_smiles": "*C#N"
-                                                      }
-                                                    },
-                                                    {
-                                                      "n2": {
-                                                        "category": [
-                                                          "chemical_substance"
-                                                        ],
-                                                        "id": "CHEBI:2590",
-                                                        "name": "Alkylnitrile",
-                                                        "simple_smiles": "*C#N"
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              ],
-                                              "question_graph": {
-                                                "edges": [
-                                                  {
-                                                    "id": "e0",
-                                                    "source_id": "n1",
-                                                    "target_id": "n2",
-                                                    "type": "similar_to"
-                                                  }
-                                                ],
-                                                "nodes": [
-                                                  {
-                                                    "curie": "CHEBI:18379",
-                                                    "id": "n1",
-                                                    "type": "named_thing"
-                                                  },
-                                                  {
-                                                    "id": "n2",
-                                                    "type": "named_thing"
-                                                  }
-                                                ]
-                                              }
-                                        }
+                                        'example': answer_eg
                                     }
                                 }
                             }
@@ -717,7 +591,7 @@ class EndpointFactory:
                 request_json = await request.json()
                 question = Question(request_json)
             except Exception as e:
-                 return JSONResponse({"Error": f"{str(type(e))} - {e}"})
+                 return JSONResponse({"Error": f"{str(type(e))} - {e}"}, 400)
             response = await question.answer(graph_interface)
             return JSONResponse(response)
 
