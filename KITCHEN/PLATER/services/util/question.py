@@ -130,12 +130,12 @@ class Question:
         assert Question.EDGES_LIST_KEY in question_graph, "No edges in query graph"
         assert isinstance(question_graph[Question.EDGES_LIST_KEY], list), "Expected edges to be list"
         for node in question_graph[Question.NODES_LIST_KEY]:
-            assert Question.TYPE_KEY in node
-            assert Question.QG_ID_KEY in node
+            assert Question.TYPE_KEY in node , f"Expected {Question.TYPE_KEY} in {node}"
+            assert Question.QG_ID_KEY in node, f"Expected {Question.QG_ID_KEY} in {node}"
         for edge in question_graph[Question.EDGES_LIST_KEY]:
-            assert Question.QG_ID_KEY in edge
-            assert Question.SOURCE_KEY in edge
-            assert Question.TARGET_KEY in edge
+            assert Question.QG_ID_KEY in edge, f"Expected {Question.QG_ID_KEY} in {edge}"
+            assert Question.SOURCE_KEY in edge, f"Expected {Question.SOURCE_KEY} in {edge}"
+            assert Question.TARGET_KEY in edge, f"Expected {Question.TARGET_KEY} in {edge}"
         # make sure everything mentioned in edges is actually refering something in the node list.
         node_ids = list(map(lambda node: node[Question.QG_ID_KEY], question_graph[Question.NODES_LIST_KEY]))
         mentions = reduce(lambda accu, value: accu + value,
