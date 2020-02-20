@@ -23,7 +23,8 @@ def parse_args(args):
         # start heart beat thread.
         heart_beat_thread = threading.Thread(
             target=Plater.send_heart_beat,
-            args=(args.automat_host, build_tag)
+            args=(args.automat_host, build_tag),
+            daemon=True
         )
         heart_beat_thread.start()
 
