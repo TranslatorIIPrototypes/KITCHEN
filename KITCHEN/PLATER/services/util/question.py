@@ -18,6 +18,7 @@ class Question:
     TARGET_KEY='target_id'
     NODE_BINDINGS_KEY='node_bindings'
     EDGE_BINDINGS_KEY='edge_bindings'
+    CURIE_KEY = 'curie'
 
     def __init__(self, question_json):
         self._question_json = copy.deepcopy(question_json)
@@ -56,8 +57,12 @@ class Question:
             node_id = node[Question.QG_ID_KEY]
             node_type = node[Question.TYPE_KEY]
             node_type_statements += [f"{node_id}:{node_type}"]
-            if Question.KG_ID_KEY in node:
-                node_type_statements += [f"{node_id}.id = \"{node[Question.KG_ID_KEY]}\""]
+            if Question.CURIE_KEY in node:
+                if isinstance(node[Question.CURIE_KEY], str):
+                    node_type_statements += [f"{node_id}.id = \"{node[Question.CURIE_KEY]}\""]
+                if isinstance(node[Question.CURIE_KEY], list):
+                    node_type_statements += [' OR '.join(map(lambda x: f"{node_id}.id = \"{x}\"", node[Question.CURIE_KEY]))]
+
             returns += [node_id]
             returns += [f'labels({node_id}) as type_{node_id}']
 
