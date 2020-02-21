@@ -26,20 +26,20 @@ async def async_get_json(url, headers={}, timeout=5*6):
                     logger.error(error)
                     return {
                         'error': error
-                    }
-                return await response.json()
+                    }, response.status
+                return await response.json(), 200
         except HTTPException as e:
             logger.error(f'error contacting {url} -- {e}')
             logger.debug(traceback.print_exc())
             return {
                 'error': f"Backend server at {url} caused  {e}"
-            }
+            }, 500
         except Exception as e:
             logger.error(f"Failed to get response from {url}.")
             logger.debug(traceback.print_exc())
             return {
                 'error': f'Internal server error {e}'
-            }
+            }, 500
 
 
 async def async_post_json(url, headers={}, body='', timeout=5*6):
@@ -52,13 +52,13 @@ async def async_post_json(url, headers={}, body='', timeout=5*6):
                     logger.error(error)
                     return {
                         'error': error
-                    }
-                return await response.json()
+                    }, response.status
+                return await response.json(), 200
         except Exception as e:
             logger.error(f"Failed to get response from {url}.")
             return {
                 'error': f"Server returned {e}"
-            }
+            }, 500
 
 
 async def async_get_text(url,headers={}):

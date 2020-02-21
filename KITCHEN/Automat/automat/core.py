@@ -3,7 +3,7 @@ from automat.registry import Registry, Heartbeat
 from automat.config import config
 from automat.util.logutil import LoggingUtil
 from automat.util.async_client import async_get_json, async_get_response, async_post_json
-from starlette.responses import JSONResponse, HTMLResponse, PlainTextResponse
+from starlette.responses import JSONResponse, HTMLResponse
 from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
 from starlette.staticfiles import StaticFiles
@@ -94,24 +94,24 @@ class Automat:
         response = JSONResponse(open_api_spec)
         await response(scope, receive, send)
 
-    # /<x>/*
     async def handle_route_to_backend(self, scope, receive, send, backend_server_url, path):
         final_path = f'http://{backend_server_url}/{"/".join(path)}?{scope["query_string"].decode("utf-8")}'
         logger.debug(f'[0] proxing request to {final_path}')
         if scope['method'] == 'GET':
-            response = await async_get_json(final_path, Automat.parse_headers_to_dict(scope['headers']))
+            response, status_code = await async_get_json(final_path, Automat.parse_headers_to_dict(scope['headers']))
         elif scope['method'] == 'POST':
             body = await Automat.read_body(receive)
-            response = await async_post_json(
+            response, status_code = await async_post_json(
                 final_path,
                 Automat.parse_headers_to_dict(scope['headers']),
                 body
             )
-        await Automat.send_json_response(scope, receive, send, response)
+        await Automat.send_json_response(scope, receive, send, response, status_code=status_code)
 
     # /registry
     async def handle_registry(self, scope, receive, send):
-        await Automat.send_json_response(scope, receive, send, list(self.registry.get_registry().keys()))
+        registry_formatted = list(self.registry.get_registry().keys())
+        await Automat.send_json_response(scope, receive, send, registry_formatted, 200)
 
     # /<Swagger ui files>
     @staticmethod
@@ -192,8 +192,8 @@ class Automat:
         return body
 
     @staticmethod
-    async def send_json_response(scope, receive, send, data):
-        json_response = JSONResponse(data)
+    async def send_json_response(scope, receive, send, data, status_code):
+        json_response = JSONResponse(data, status_code=status_code)
         await json_response(scope, receive, send)
 
     @staticmethod
@@ -207,7 +207,7 @@ class Automat:
     async def get_swagger_paths(server_url,tag,  timeout=5*6):
         open_api_path = '/openapi.json'
         full_path = f'http://{server_url}{open_api_path}'
-        response = await async_get_json(full_path, timeout=timeout)
+        response, status_code = await async_get_json(full_path, timeout=timeout)
         if 'error' in response:
             logger.error(response['error'])
             return {}
