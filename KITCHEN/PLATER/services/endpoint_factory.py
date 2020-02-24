@@ -361,8 +361,8 @@ class EndpointFactory:
             # adding paths to reasoner api in opane api spec
             example_questions = Question.transform_schema_to_question_template({'gene': {'chemical_substance': ['is_affected_by']}})
             example_question = example_questions[0]
-            node_ids = list(map(lambda x: x[Question.QG_ID_KEY], example_question[Question.QUERY_GRAPH_KEY][Question.NODES_LIST_KEY]))
-            edge_ids = list(map(lambda x: x[Question.QG_ID_KEY], example_question[Question.QUERY_GRAPH_KEY][Question.EDGES_LIST_KEY]))
+            node_ids = list(map(lambda x: x['id'], example_question[Question.QUERY_GRAPH_KEY][Question.NODES_LIST_KEY]))
+            edge_ids = list(map(lambda x: x['id'], example_question[Question.QUERY_GRAPH_KEY][Question.EDGES_LIST_KEY]))
             db_returns = {
                 key : {
                     'id': f'{key}\'s DB ID',

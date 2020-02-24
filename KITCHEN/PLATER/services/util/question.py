@@ -39,7 +39,7 @@ class Question:
             edge_type = ':' + edge_type if edge_type else ''
             source_id = edge[Question.SOURCE_KEY]
             target_id = edge[Question.TARGET_KEY]
-            edge_id = edge[Question.QG_ID_KEY]
+            edge_id = edge['id']
             path = f"({source_id})-[{edge_id}{edge_type}]->({target_id})"
 
             #append path
@@ -54,7 +54,7 @@ class Question:
         # append a in returned list
         node_type_statements = []
         for node in nodes:
-            node_id = node[Question.QG_ID_KEY]
+            node_id = node['id']
             node_type = node[Question.TYPE_KEY]
             node_type_statements += [f"{node_id}:{node_type}"]
             if Question.CURIE_KEY in node:
@@ -81,10 +81,10 @@ class Question:
         results = await graph_interface.run_cypher(cypher)
         results_dict = graph_interface.convert_to_dict(results)
         node_keys = list(map(
-            lambda node: node[Question.QG_ID_KEY],
+            lambda node: node['id'],
             self._question_json[Question.QUERY_GRAPH_KEY][Question.NODES_LIST_KEY]))
         edge_map = {
-            edge[Question.QG_ID_KEY]: edge
+            edge['id']: edge
             for edge in self._question_json[Question.QUERY_GRAPH_KEY][Question.EDGES_LIST_KEY]
         }
         edge_keys = set(edge_map.keys())
@@ -142,13 +142,13 @@ class Question:
         assert isinstance(question_graph[Question.EDGES_LIST_KEY], list), "Expected edges to be list"
         for node in question_graph[Question.NODES_LIST_KEY]:
             assert Question.TYPE_KEY in node , f"Expected {Question.TYPE_KEY} in {node}"
-            assert Question.QG_ID_KEY in node, f"Expected {Question.QG_ID_KEY} in {node}"
+            assert 'id' in node, f"Expected `id` in {node}"
         for edge in question_graph[Question.EDGES_LIST_KEY]:
-            assert Question.QG_ID_KEY in edge, f"Expected {Question.QG_ID_KEY} in {edge}"
+            assert 'id' in edge, f"Expected `id` in {edge}"
             assert Question.SOURCE_KEY in edge, f"Expected {Question.SOURCE_KEY} in {edge}"
             assert Question.TARGET_KEY in edge, f"Expected {Question.TARGET_KEY} in {edge}"
         # make sure everything mentioned in edges is actually refering something in the node list.
-        node_ids = list(map(lambda node: node[Question.QG_ID_KEY], question_graph[Question.NODES_LIST_KEY]))
+        node_ids = list(map(lambda node: node['id'], question_graph[Question.NODES_LIST_KEY]))
         mentions = reduce(lambda accu, value: accu + value,
                           list(map(lambda edge: [
                               edge[Question.SOURCE_KEY],
@@ -204,11 +204,11 @@ class Question:
                 question_graph = {
                     Question.NODES_LIST_KEY: [
                         {
-                            Question.QG_ID_KEY: "n1",
+                            'id': "n1",
                             Question.TYPE_KEY: source_type,
                         },
                         {
-                            Question.QG_ID_KEY: "n2",
+                            'id': "n2",
                             Question.TYPE_KEY: target_type,
                         }
                     ],
@@ -217,7 +217,7 @@ class Question:
                 edge_set = target_set[target_type]
                 for index, edge_type in enumerate(set(edge_set)):
                     edge_dict = {
-                        Question.QG_ID_KEY: f"e{index}",
+                        'id': f"e{index}",
                         Question.SOURCE_KEY: "n1",
                         Question.TARGET_KEY: "n2",
                         Question.TYPE_KEY: edge_type
