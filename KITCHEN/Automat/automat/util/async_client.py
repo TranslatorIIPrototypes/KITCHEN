@@ -48,11 +48,15 @@ async def async_post_json(url, headers={}, body='', timeout=5*6):
         try:
             async with session.post(url, data=body, headers=headers) as response:
                 if response.status != 200:
-                    error = f"Failed to get response from {url}. Status code {response.status}"
-                    logger.error(error)
-                    return {
-                        'error': error
-                    }, response.status
+                    try:
+                        content = await response.json()
+                    except:
+                        content = await response.content.read()
+                        content = {
+                            'error': content.decode('utf-8')
+                        }
+                    logger.error(f'{url} returned {response.status}. {content}')
+                    return content, response.status
                 return await response.json(), 200
         except Exception as e:
             logger.error(f"Failed to get response from {url}.")
