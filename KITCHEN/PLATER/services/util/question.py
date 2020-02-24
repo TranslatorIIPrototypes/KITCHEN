@@ -95,18 +95,23 @@ class Question:
         }
         for result in results_dict:
             answer = {
-                Question.EDGE_BINDINGS_KEY: {},
-                Question.NODE_BINDINGS_KEY: {}
+                Question.EDGE_BINDINGS_KEY: [],
+                Question.NODE_BINDINGS_KEY: []
             }
 
             for query_graph_id in result:
                 # Query should return type_<QG_ID> for all the nodes and edges where QG_ID is the nodes / edges
                 # query graph id
+                answer_dict = {
+                    Question.QG_ID_KEY: query_graph_id
+                }
+
                 if query_graph_id in node_keys:
                     ### bind query_graph id with the knowledge graph id
                     types = result[f'type_{query_graph_id}']
                     result[query_graph_id]['type'] = types
-                    answer[Question.NODE_BINDINGS_KEY].update({query_graph_id: result[query_graph_id]['id']})
+                    answer_dict.update({Question.KG_ID_KEY: result[query_graph_id]['id']})
+                    answer[Question.NODE_BINDINGS_KEY].append(answer_dict)
                     knowledge_graph[Question.NODES_LIST_KEY].append(result[query_graph_id])
                     continue
                 if query_graph_id in edge_keys:
@@ -114,7 +119,8 @@ class Question:
                     # like the nodes add type to edges
                     types = result[f'type_{query_graph_id}']
                     result[query_graph_id]['type'] = types
-                    answer[Question.EDGE_BINDINGS_KEY].update({query_graph_id: result[query_graph_id]['id']})
+                    answer_dict.update({Question.KG_ID_KEY: result[query_graph_id]['id']})
+                    answer[Question.EDGE_BINDINGS_KEY].append(answer_dict)
                     # Use question graph id to resolve actual result id
                     source_key = edge_map[query_graph_id][Question.SOURCE_KEY]
                     target_key = edge_map[query_graph_id][Question.TARGET_KEY]
