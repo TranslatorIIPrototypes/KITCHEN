@@ -6,6 +6,7 @@ from PLATER.services.util.logutil import LoggingUtil
 from PLATER.services.config import config
 
 
+
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
                                   config.get('logging_format'),
@@ -64,7 +65,7 @@ class Neo4jHTTPDriver:
             raise RuntimeError('Connection to Neo4j could not be established.')
             exit(1)
 
-    async def run(self, query):
+    async def run(self, query, params = None):
         """
         Runs a neo4j query async.
         :param query: Cypher query.
@@ -168,6 +169,13 @@ class GraphInterface:
                         schema_bag[subject][objct] = []
                     if predicate not in schema_bag[subject][objct]:
                         schema_bag[subject][objct].append(predicate)
+                    # do reverse
+                    if objct not in schema_bag:
+                        schema_bag[objct] = {}
+                    if subject not in schema_bag[objct]:
+                        schema_bag[objct][subject] = []
+                    if predicate not in schema_bag[objct][subject]:
+                        schema_bag[objct][subject].append(predicate)
                 self.schema = schema_bag
             return self.schema
 
@@ -237,6 +245,10 @@ class GraphInterface:
             query = f'MATCH (c:{source_type}{{id: \'{curie}\'}})-[e]->(b:{target_type}) return distinct c , e, b'
             response = await self.driver.run(query)
             rows = list(map(lambda data: data['row'], response['results'][0]['data']))
+            query = f'MATCH (c:{source_type}{{id: \'{curie}\'}})<-[e]-(b:{target_type}) return distinct b , e, c'
+            response = await self.driver.run(query)
+            rows += list(map(lambda data: data['row'], response['results'][0]['data']))
+
             return rows
 
         async def run_cypher(self, cypher):

@@ -1,8 +1,8 @@
 import copy
 from functools import reduce
 from PLATER.services.util.graph_adapter import GraphInterface
-
-
+from PLATER.services.util.qgraph_compiler import cypher_query_answer_map, flatten_semilist
+import time
 class Question:
 
     #SPEC VARS
@@ -25,113 +25,119 @@ class Question:
         self.__validate()
 
     def compile_cypher(self):
-        question_graph = self._question_json[Question.QUERY_GRAPH_KEY]
-        edges = question_graph[Question.EDGES_LIST_KEY]
-        nodes = question_graph[Question.NODES_LIST_KEY]
-        paths = []
-        # Used to construct things guery graph returns
-        returns = []
+        return cypher_query_answer_map(self._question_json[Question.QUERY_GRAPH_KEY])
 
-        # Create (a:type)->[e:type]->(b:type)  strings
-        # append e in returned list
-        for edge in edges:
-            edge_type = edge.get(Question.TYPE_KEY)
-            edge_type = ':' + edge_type if edge_type else ''
-            source_id = edge[Question.SOURCE_KEY]
-            target_id = edge[Question.TARGET_KEY]
-            edge_id = edge['id']
-            path = f"({source_id})-[{edge_id}{edge_type}]->({target_id})"
-
-            #append path
-            paths += [path]
-
-            #add returns
-            returns += [edge_id]
-            returns += [f'type({edge_id}) as type_{edge_id}']
-
-        # make where clause for restricting node types
-        # a:type{id:'curie'}
-        # append a in returned list
-        node_type_statements = []
-        for node in nodes:
-            node_id = node['id']
-            node_type = node[Question.TYPE_KEY]
-            node_type_statements += [f"{node_id}:{node_type}"]
-            if Question.CURIE_KEY in node:
-                if isinstance(node[Question.CURIE_KEY], str):
-                    node_type_statements += [f"{node_id}.id = \"{node[Question.CURIE_KEY]}\""]
-                if isinstance(node[Question.CURIE_KEY], list):
-                    node_type_statements += [' OR '.join(map(lambda x: f"{node_id}.id = \"{x}\"", node[Question.CURIE_KEY]))]
-
-            returns += [node_id]
-            returns += [f'labels({node_id}) as type_{node_id}']
-
-        # join (a)-[e]->(b)
-        # join where
-        # join returns
-        match_clause = ' , '.join(paths)
-        where_clause = ' AND '.join(node_type_statements)
-        return_clause = ', '.join(returns)
-
-        cypher = f"""MATCH {match_clause}  WHERE {where_clause} RETURN {return_clause} """
-        return cypher
-
-    async def answer(self, graph_interface: GraphInterface):
+    async def answer(self, graph_interface: GraphInterface, yank=True):
         cypher = self.compile_cypher()
+        print(cypher)
+        s = time.time()
         results = await graph_interface.run_cypher(cypher)
+        end = time.time()
+        print(f'grabbing results took {end - s}')
         results_dict = graph_interface.convert_to_dict(results)
-        node_keys = list(map(
-            lambda node: node['id'],
-            self._question_json[Question.QUERY_GRAPH_KEY][Question.NODES_LIST_KEY]))
-        edge_map = {
-            edge['id']: edge
-            for edge in self._question_json[Question.QUERY_GRAPH_KEY][Question.EDGES_LIST_KEY]
-        }
-        edge_keys = set(edge_map.keys())
         answer_bindings = []
-        knowledge_graph = {
-            Question.NODES_LIST_KEY: [],
-            Question.EDGES_LIST_KEY: []
-        }
         for result in results_dict:
+            edge_bindings = []
+            for e in result.get('edges', []):
+                edge_binding = {
+                    Question.KG_ID_KEY: e.get('kg_id'),
+                    Question.QG_ID_KEY: e.get('qg_id')
+                }
+                edge_bindings.append(edge_binding)
+
+            node_bindings = []
+            for n in result.get('nodes', []):
+                node_bindings.append(
+                    {
+                        Question.KG_ID_KEY: n['kg_id'],
+                        Question.QG_ID_KEY: n['qg_id']
+                    }
+                )
             answer = {
-                Question.EDGE_BINDINGS_KEY: [],
-                Question.NODE_BINDINGS_KEY: []
+                Question.EDGE_BINDINGS_KEY: edge_bindings,
+                Question.NODE_BINDINGS_KEY: node_bindings
             }
 
-            for query_graph_id in result:
-                # Query should return type_<QG_ID> for all the nodes and edges where QG_ID is the nodes / edges
-                # query graph id
-                answer_dict = {
-                    Question.QG_ID_KEY: query_graph_id
-                }
-
-                if query_graph_id in node_keys:
-                    ### bind query_graph id with the knowledge graph id
-                    types = result[f'type_{query_graph_id}']
-                    result[query_graph_id]['type'] = types
-                    answer_dict.update({Question.KG_ID_KEY: result[query_graph_id]['id']})
-                    answer[Question.NODE_BINDINGS_KEY].append(answer_dict)
-                    knowledge_graph[Question.NODES_LIST_KEY].append(result[query_graph_id])
-                    continue
-                if query_graph_id in edge_keys:
-                    ### bind query_graph edge with the kg id
-                    # like the nodes add type to edges
-                    types = result[f'type_{query_graph_id}']
-                    result[query_graph_id]['type'] = types
-                    answer_dict.update({Question.KG_ID_KEY: result[query_graph_id]['id']})
-                    answer[Question.EDGE_BINDINGS_KEY].append(answer_dict)
-                    # Use question graph id to resolve actual result id
-                    source_key = edge_map[query_graph_id][Question.SOURCE_KEY]
-                    target_key = edge_map[query_graph_id][Question.TARGET_KEY]
-                    result[query_graph_id][Question.SOURCE_KEY] = result[source_key]['id']
-                    result[query_graph_id][Question.TARGET_KEY] = result[target_key]['id']
-                    knowledge_graph[Question.EDGES_LIST_KEY].append(result[query_graph_id])
-                    continue
             answer_bindings.append(answer)
         self._question_json[Question.ANSWERS_KEY] = answer_bindings
-        self._question_json[Question.KNOWLEDGE_GRAPH_KEY] = knowledge_graph
+        s = time.time()
+        if yank == True:
+            self._question_json[Question.KNOWLEDGE_GRAPH_KEY] = await self.yank(answer_bindings, graph_interface)
+        e = time.time()
+        print(f'pulling answers back took {e - s}')
         return self._question_json
+
+    async def yank(self, answers, graph_interface: GraphInterface):
+        """
+        Pull neo4j data for all the mini ids
+        :param answer_bindings:
+        :return:
+        """
+        node_ids = []
+        edge_ids = []
+        for answer in answers:
+            node_ids += list(map(lambda node_binding: node_binding[self.KG_ID_KEY], answer[self.NODE_BINDINGS_KEY]))
+            edge_ids += list(map(lambda edge_binding: edge_binding[self.KG_ID_KEY], answer[self.EDGE_BINDINGS_KEY]))
+        node_ids = list(set(flatten_semilist(node_ids)))
+        edge_ids = list(set(flatten_semilist(edge_ids)))
+        return await self.get_properties(graph_interface, edge_ids, node_ids)
+
+    async def get_properties(self, graph_interface: GraphInterface, edge_ids, node_ids):
+        """Get properties associated with edges and nodes."""
+        cypher_get_nodes = f"""
+        MATCH (node) where node.id in {node_ids} return collect({{node: node, type: labels(node)}}) as nodes 
+        """
+        s = time.time()
+        nodes_full = await graph_interface.run_cypher(cypher_get_nodes)
+        e = time.time()
+        print(f'grabbing nodes toolk {e -s}')
+        nodes_full = graph_interface.convert_to_dict(nodes_full)
+        nodes_full = nodes_full[0]['nodes']
+        nodes = []
+        for node in nodes_full:
+            node_properties = node['node']
+            node_properties.update({
+                'type': node['type']
+            })
+            nodes.append(
+                node_properties
+            )
+        s = time.time()
+
+        edges = await self.get_edge_properties(graph_interface, edge_ids)
+        e = time.time()
+        print(f'grabbing endges took {e-s}')
+        return {
+            self.NODES_LIST_KEY: nodes,
+            self.EDGES_LIST_KEY: edges
+        }
+
+    async def get_edge_properties(self, graph_interface: GraphInterface, edge_ids, fields=None):
+        if not edge_ids:
+            return []
+        functions = {
+            'source_id': 'startNode(e).id',
+            'target_id': 'endNode(e).id',
+            'type': 'type(e)'
+        }
+
+        if fields is not None:
+            prop_string = ', '.join(
+                [f'{key}:{functions[key]}' if key in functions else f'{key}:e.{key}' for key in fields])
+        else:
+            prop_string = ', '.join([f'{key}:{functions[key]}' for key in functions] + ['.*'])
+        batch = ' '.join(edge_ids)
+        statement = f"" \
+            f"CALL db.index.fulltext.queryRelationships('edge_id_index', '{batch}') YIELD relationship " \
+            f"WITH relationship as e RETURN collect(e{{{prop_string}}}) as edges"
+        print(f'grabbing enges{statement}')
+        answer = await graph_interface.run_cypher(statement)
+        if answer.get('errors'):
+            print(f'got neo4j error {answer.get("errors")}')
+        answer = graph_interface.convert_to_dict(answer)
+        if len(answer):
+            return answer[0]['edges']
+        return []
 
     def __validate(self):
         assert Question.QUERY_GRAPH_KEY in self._question_json, "No question graph in json."
@@ -229,9 +235,9 @@ class Question:
 
 if __name__ == '__main__':
     schema  = {
-      "chemical_substance": {
-        "chemical_substance": [
-          "similar_to"
+      "gene": {
+        "biological_process_or_activity": [
+          "actively_involved_in"
         ],
         "named_thing": [
           "similar_to"
@@ -250,12 +256,13 @@ if __name__ == '__main__':
     questions = Question.transform_schema_to_question_template(schema)
     print(questions)
     question = Question(questions[0])
-    print(question.compile_cypher())
-    questions[0]['query_graph']['nodes'][0]['kg_id'] = 'PUBCHEM:6302'
-    del questions[0]['query_graph']['edges'][0]['type']
+    questions[0]['query_graph']['nodes'][0]['curie'] = 'MONDO:0005148'
+    questions[0]['query_graph']['nodes'][0]['type'] = 'disease'
+    questions[0]['query_graph']['edges'][0]['type'] = 'treats'
+    questions[0]['query_graph']['nodes'][1]['type'] = 'chemical_substance'
     q2 = Question(questions[0])
     ans = q2.answer(graph_interface=GraphInterface('localhost','7474', ('neo4j', 'ncatsgamma')))
     import asyncio
     event_loop = asyncio.get_event_loop()
     result = event_loop.run_until_complete(ans)
-    print(result)
+    print(json.dumps(result, indent=2))

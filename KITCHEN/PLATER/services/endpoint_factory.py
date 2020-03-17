@@ -372,15 +372,18 @@ class EndpointFactory:
             db_returns.update({
                 f'type_{key}': f"{key}'s type" for key in edge_ids + node_ids
             })
-
-
             class GI_MOCK:
                 pass
             async def run(a, b): return None
             GI_MOCK.run_cypher = run
             GI_MOCK.convert_to_dict = lambda x,y :  [db_returns]
             q = Question(example_question)
-            answer_eg = await q.answer(GI_MOCK())
+            answer_eg = await q.answer(GI_MOCK(), yank=False)
+            answer_eg[Question.KNOWLEDGE_GRAPH_KEY] = {}
+            answer_eg[Question.KNOWLEDGE_GRAPH_KEY][Question.NODES_LIST_KEY] = [db_returns[node_id] for node_id in
+                                                                                node_ids]
+            answer_eg[Question.KNOWLEDGE_GRAPH_KEY][Question.EDGES_LIST_KEY] = [db_returns[edge_id] for edge_id in
+                                                                                edge_ids]
 
             paths['/reasonerapi'] = {
                  'get': {
