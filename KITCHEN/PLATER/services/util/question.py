@@ -3,6 +3,8 @@ from functools import reduce
 from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.util.qgraph_compiler import cypher_query_answer_map, flatten_semilist
 import time
+import asyncio
+
 class Question:
 
     #SPEC VARS
@@ -126,18 +128,26 @@ class Question:
                 [f'{key}:{functions[key]}' if key in functions else f'{key}:e.{key}' for key in fields])
         else:
             prop_string = ', '.join([f'{key}:{functions[key]}' for key in functions] + ['.*'])
-        batch = ' '.join(edge_ids)
-        statement = f"" \
-            f"CALL db.index.fulltext.queryRelationships('edge_id_index', '{batch}') YIELD relationship " \
-            f"WITH relationship as e RETURN collect(e{{{prop_string}}}) as edges"
-        print(f'grabbing enges{statement}')
-        answer = await graph_interface.run_cypher(statement)
-        if answer.get('errors'):
-            print(f'got neo4j error {answer.get("errors")}')
-        answer = graph_interface.convert_to_dict(answer)
-        if len(answer):
-            return answer[0]['edges']
-        return []
+        chunk_size = 1024
+        chunks = [edge_ids[start: start + chunk_size] for start in range(0, len(edge_ids), chunk_size)]
+        tasks = []
+        for ids in chunks:
+            batch = ' '.join(ids)
+            statement = f"" \
+                f"CALL db.index.fulltext.queryRelationships('edge_id_index', '{batch}') YIELD relationship " \
+                f"WITH relationship as e RETURN collect(e{{{prop_string}}}) as edges"
+            print(f'grabbing enges{statement}')
+            tasks.append(graph_interface.run_cypher(statement))
+
+        answers = await asyncio.gather(*tasks)
+        response = []
+        for answer in answers:
+            if answer.get('errors'):
+                print(f'got neo4j error {answer.get("errors")}')
+            answer = graph_interface.convert_to_dict(answer)
+            if len(answer):
+                response += answer[0]['edges']
+        return response
 
     def __validate(self):
         assert Question.QUERY_GRAPH_KEY in self._question_json, "No question graph in json."
@@ -256,10 +266,10 @@ if __name__ == '__main__':
     questions = Question.transform_schema_to_question_template(schema)
     print(questions)
     question = Question(questions[0])
-    questions[0]['query_graph']['nodes'][0]['curie'] = 'MONDO:0005148'
-    questions[0]['query_graph']['nodes'][0]['type'] = 'disease'
+    questions[0]['query_graph']['nodes'][1]['curie'] = 'MONDO:0005148'
+    questions[0]['query_graph']['nodes'][1]['type'] = 'disease'
     questions[0]['query_graph']['edges'][0]['type'] = 'treats'
-    questions[0]['query_graph']['nodes'][1]['type'] = 'chemical_substance'
+    questions[0]['query_graph']['nodes'][0]['type'] = 'chemical_substance'
     q2 = Question(questions[0])
     ans = q2.answer(graph_interface=GraphInterface('localhost','7474', ('neo4j', 'ncatsgamma')))
     import asyncio
