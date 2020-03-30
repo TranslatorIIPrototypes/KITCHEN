@@ -1,10 +1,11 @@
 import aiohttp
 import asyncio
 from functools import reduce
+from PLATER.services.config import config
 
 
 class BLHelper:
-    def __init__(self, bl_url='https://bl-lookup-sri.renci.org'):
+    def __init__(self, bl_url=config.get('bl_url')):
         self.bl_url = bl_url
 
     @staticmethod

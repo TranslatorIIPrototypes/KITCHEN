@@ -1,12 +1,13 @@
 import logging
 from logging.handlers import RotatingFileHandler
-
+import os
 
 class LoggingUtil(object):
     """ Logging utility controlling format and setting initial logging level """
 
     @staticmethod
-    def init_logging(name, level=logging.INFO, format_sel='medium', log_file_path=None, log_file_level=None):
+    def init_logging(name, level=logging.INFO, format_sel='medium', log_file_level=None):
+        log_file_path = os.path.join(os.path.dirname(__file__), '../../logs/plater.log')
         # get a logger
         logger = logging.getLogger(__name__)
 
