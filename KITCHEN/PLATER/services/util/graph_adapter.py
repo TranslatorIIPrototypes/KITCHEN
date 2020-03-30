@@ -1,16 +1,15 @@
 import base64
+import traceback
+
 import aiohttp
 import requests
-import traceback
-from PLATER.services.util.logutil import LoggingUtil
+
 from PLATER.services.config import config
-
-
+from PLATER.services.util.logutil import LoggingUtil
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
-                                  config.get('logging_format'),
-                                  config.get('logging_file_path')
+                                  config.get('logging_format')
                                   )
 
 
@@ -29,6 +28,7 @@ class Neo4jHTTPDriver:
         # ping and raise error if neo4j doesn't respond.
         logger.debug('PINGING NEO4J')
         self.ping()
+        self.make_indexes(config.get('edge_index_name', 'edge_id_index'))
 
     async def post_request_json(self, payload):
         tcp_connector = aiohttp.TCPConnector(limit=60)
@@ -55,6 +55,7 @@ class Neo4jHTTPDriver:
             response = requests.get(ping_url, headers=self._header)
             later = time.time()
             time_taken = later - now
+            logger.debug(f'Contacting neo4j took {time_taken} seconds.')
             if time_taken > 5:  # greater than 5 seconds it's not healthy
                 logger.warn(f"Contacting neo4j took more than 5 seconds ({time_taken}). Neo4j might be stressed.")
             if response.status_code != 200:
@@ -63,9 +64,8 @@ class Neo4jHTTPDriver:
             logger.error(f"Error contacting Neo4j @ {ping_url} -- Exception raised -- {e}")
             logger.debug(traceback.print_exc())
             raise RuntimeError('Connection to Neo4j could not be established.')
-            exit(1)
 
-    async def run(self, query, params = None):
+    async def run(self, query):
         """
         Runs a neo4j query async.
         :param query: Cypher query.
@@ -83,7 +83,10 @@ class Neo4jHTTPDriver:
         }
 
         response = await self.post_request_json(payload)
-
+        errors = response.get('errors')
+        if errors:
+            logger.error(f'Neo4j returned `{errors}` for cypher {query}.')
+            raise RuntimeWarning(f'Error running cypher {query}.')
         return response
 
     def run_sync(self, query):
@@ -103,9 +106,13 @@ class Neo4jHTTPDriver:
             self._full_transaction_path,
             headers=self._header,
             json=payload).json()
+        errors = response.get('errors')
+        if errors:
+            logger.error(f'Neo4j returned `{errors}` for cypher {query}.')
+            raise RuntimeWarning(f'Error running cypher {query}.')
         return response
 
-    def convert_to_dict(self, response):
+    def convert_to_dict(self, response: dict) -> list:
         """
         Converts a neo4j result to a structured result.
         :param response: neo4j http raw result.
@@ -128,6 +135,42 @@ class Neo4jHTTPDriver:
                         array.append(new_row)
         return array
 
+    def make_indexes(self, index_name='edge_id_index'):
+        """
+        Generate indexes in neo4j if it doesn't exist.
+        :param index_name: Edge index name.
+        :return: None
+        """
+        logger.debug(f'Checking for edge index `{index_name}`.')
+        # first lookup for list of available indexes
+        index_query = 'CALL db.indexes()'
+        index_type = 'relationship_fulltext'
+        results = self.convert_to_dict(self.run_sync(index_query))
+        # check if index provided exists for edge type
+        filtered_index = [index for index in results if index['indexName'] == index_name]
+        if not filtered_index:
+            # index doesn't exist create it for every edge type
+            # grab edge types and make index for them.
+            logger.debug(f'Edge index `{index_name}` not found. Creating ....')
+            edge_types_query = 'CALL db.relationshipTypes()'
+            rows = self.convert_to_dict(self.run_sync(edge_types_query))
+            edge_types = [row['relationshipType'] for row in rows]
+            create_index_query = f"""CALL db.index.fulltext.createRelationshipIndex(
+                                        'edge_id_index', 
+                                        [{', '.join(f"'{predicate}'" for predicate in edge_types)}], 
+                                        ['id'], {{analyzer: 'whitespace', eventually_consistent: 'true'}})
+                                  """
+            # run index creation query
+            response = self.run_sync(create_index_query)
+
+        else:
+            # make sure it's the right type
+            tp = filtered_index[0]['type']
+            assert tp == index_type, f'Neo4j reports Index with ' \
+                f'name {index_name} exists, but its a different type ({tp}).' \
+                f'It needs to of type {index_type}'
+        return results
+
 
 class GraphInterface:
     """
@@ -136,7 +179,7 @@ class GraphInterface:
 
     class _GraphInterface:
         def __init__(self, host, port, auth):
-            self.driver = Neo4jHTTPDriver(host=host, port= port, auth= auth)
+            self.driver = Neo4jHTTPDriver(host=host, port=port, auth=auth)
             self.schema = None
 
         def get_schema(self):
@@ -200,8 +243,7 @@ class GraphInterface:
             response = self.convert_to_dict(response)
             return response
 
-
-        async def get_node(self, node_type: str, curie: str) -> dict:
+        async def get_node(self, node_type: str, curie: str) -> list:
             """
             Returns a node that matches curie as its ID.
             :param node_type: Type of the node.
@@ -209,7 +251,7 @@ class GraphInterface:
             :param curie: Curie.
             :type curie: str
             :return: value of the node in neo4j.
-            :rtype: dict
+            :rtype: list
             """
             query = f"MATCH (c:{node_type}{{id: '{curie}'}}) return c"
             response = await self.driver.run(query)
@@ -229,7 +271,7 @@ class GraphInterface:
                 rows = reduce(lambda x, y: x + y.get('row', []), data, [])
             return rows
 
-        async def get_single_hops(self, source_type, target_type, curie):
+        async def get_single_hops(self, source_type: str, target_type: str, curie: str) -> list:
             """
             Returns a triplets of source to target where source id is curie.
             :param source_type: Type of the source node.
@@ -251,13 +293,13 @@ class GraphInterface:
 
             return rows
 
-        async def run_cypher(self, cypher):
+        async def run_cypher(self, cypher: str) -> list:
             """
             Runs cypher directly.
             :param cypher: cypher query.
             :type cypher: str
             :return: unprocessed neo4j response.
-            :rtype: dict
+            :rtype: list
             """
             return await self.driver.run(cypher)
 

@@ -4,7 +4,6 @@ from starlette.responses import JSONResponse, HTMLResponse
 from starlette.schemas import OpenAPIResponse
 from starlette.routing import Route
 from starlette.applications import Starlette
-from starlette.schemas import SchemaGenerator
 from starlette.staticfiles import StaticFiles
 import urllib.parse
 from jinja2 import Environment, FileSystemLoader
@@ -13,16 +12,14 @@ from PLATER.services.util.logutil import LoggingUtil
 from PLATER.services.util.question import Question
 from PLATER.services.util.bl_helper import BLHelper
 from PLATER.services.config import config
-
+from PLATER.services.util.graph_adapter import GraphInterface
 
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
-                                  config.get('logging_format'),
-                                  config.get('logging_file_path')
+                                  config.get('logging_format')
                                   )
 
-from PLATER.services.util.graph_adapter import GraphInterface
 
 
 class EndpointFactory:
