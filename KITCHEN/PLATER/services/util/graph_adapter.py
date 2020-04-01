@@ -141,7 +141,7 @@ class Neo4jHTTPDriver:
         :param index_name: Edge index name.
         :return: None
         """
-        logger.debug(f'Checking for edge index `{index_name}`.')
+        logger.info(f'Checking for edge index `{index_name}`.')
         # first lookup for list of available indexes
         index_query = 'CALL db.indexes()'
         index_type = 'relationship_fulltext'
@@ -149,6 +149,7 @@ class Neo4jHTTPDriver:
         # check if index provided exists for edge type
         filtered_index = [index for index in results if index['indexName'] == index_name]
         if not filtered_index:
+            logger.warn(f'Missing edge index {index_name}')
             # index doesn't exist create it for every edge type
             # grab edge types and make index for them.
             logger.debug(f'Edge index `{index_name}` not found. Creating ....')
@@ -165,6 +166,7 @@ class Neo4jHTTPDriver:
 
         else:
             # make sure it's the right type
+            logger.info(f'Edge index {index_name} found.')
             tp = filtered_index[0]['type']
             assert tp == index_type, f'Neo4j reports Index with ' \
                 f'name {index_name} exists, but its a different type ({tp}).' \

@@ -12,7 +12,7 @@ from PLATER.services.config import config
 from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
 from PLATER.services.util.logutil import LoggingUtil
-
+from PLATER.validators.plater_validators import PLATER_Validator
 
 logger = LoggingUtil.init_logging(__name__,
                                   #
@@ -26,9 +26,14 @@ class Plater:
 
         self.settings = settings
         validate = self.settings.get('validate', False)
-        self.config = config
         if validate:
             logger.debug('[0] Validation turned on.')
+            self.validator = PLATER_Validator()
+            # going to call validator
+            is_valid_graph = self.validator.validate(report_to_file=True)
+            if not is_valid_graph:
+                logger.warning('Running web server graph is not KGX compliant!!')
+        self.config = config
         self.build_tag = build_tag
         self.graph_adapter = GraphInterface(
             self.config.get('NEO4J_HOST'),

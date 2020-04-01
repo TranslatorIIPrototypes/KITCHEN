@@ -46,6 +46,8 @@ if __name__=='__main__':
         help='Needs to be a full http/https url. Eg. http://<automat_location>:<automat_port>'
              'If you have an Automat (https://github.com/TranslatorIIPrototypes/KITCHEN/tree/master/KITCHEN/Automat) '
              'cluster and you\'d like this instance to be accessible via the Automat interface.'
+             'Needs PLATER_SERVICE_ADDRESS env variable to the host name of where this instance is deployed.'
+
     )
 
 
