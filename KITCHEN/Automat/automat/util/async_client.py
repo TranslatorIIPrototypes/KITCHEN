@@ -8,8 +8,7 @@ from automat.util.logutil import LoggingUtil
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
-                                  config.get('logging_format'),
-                                  config.get('logging_file_path')
+                                  config.get('logging_format')
                                   )
 
 

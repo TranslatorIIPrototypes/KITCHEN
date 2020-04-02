@@ -1,4 +1,5 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 
@@ -6,8 +7,9 @@ class LoggingUtil(object):
     """ Logging utility controlling format and setting initial logging level """
 
     @staticmethod
-    def init_logging(name, level=logging.INFO, format_sel='medium', log_file_path=None, log_file_level=None):
+    def init_logging(name, level=logging.INFO, format_sel='medium', log_file_level=None):
         # get a logger
+        log_file_path = os.path.join(os.path.dirname(__file__), '../../logs/automat.log')
         logger = logging.getLogger(__name__)
 
         # returns a new logger if its not the root
