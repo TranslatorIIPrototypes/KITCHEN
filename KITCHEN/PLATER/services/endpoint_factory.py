@@ -1,3 +1,6 @@
+import urllib
+
+from jinja2 import Environment, PackageLoader
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
@@ -8,6 +11,7 @@ from PLATER.services.config import config
 from PLATER.services.util.bl_helper import BLHelper
 from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.util.logutil import LoggingUtil
+from PLATER.services.util.question import Question
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
@@ -150,8 +154,7 @@ class EndpointFactory:
             debug=int(config.get('logging_level')) == 10,
             routes=routes
         )
-        # mount swagger ui files
-        app.router.mount('/', app=StaticFiles(directory=f'{swagger_ui_3_path}'))
+
         return app
 
     def create_hop_endpoint(self, source_type, target_type):
@@ -557,12 +560,14 @@ class EndpointFactory:
        """
         # build Swagger UI
         env = Environment(
-            loader=FileSystemLoader(swagger_ui_3_path)
+            loader=PackageLoader('PLATER', 'templates')
         )
-        template = env.get_template('index.j2')
+        template = env.get_template('swagger_ui.j2')
         html_content = template.render(
-            title=f'Plater- {build_tag}',
+            title=f'Plater - {build_tag}',
             openapi_spec_url="./openapi.json",
+            ui_version='3.24.2',
+            doc_expansion='none'
         )
 
         async def swagger_doc_handler(request):

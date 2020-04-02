@@ -1,7 +1,7 @@
 aiohttp==3.6.2
 aiofiles==0.4.0
+Jinja2==2.11.1
 pyaml
 requests==2.22.0
 starlette==0.13.1
-swagger_ui_bundle
 uvicorn==0.11.2
