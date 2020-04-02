@@ -1,14 +1,12 @@
 import asyncio
-from automat.registry import Registry, Heartbeat
-from automat.config import config
-from automat.util.logutil import LoggingUtil
-from automat.util.async_client import async_get_json, async_get_response, async_post_json
-from starlette.responses import JSONResponse, HTMLResponse
-from jinja2 import Environment, PackageLoader
-from swagger_ui_bundle import swagger_ui_3_path
-from starlette.staticfiles import StaticFiles
 import json
 
+from automat.config import config
+from automat.registry import Heartbeat, Registry
+from automat.util.async_client import async_get_json, async_post_json
+from automat.util.logutil import LoggingUtil
+from jinja2 import Environment, PackageLoader
+from starlette.responses import HTMLResponse, JSONResponse
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
