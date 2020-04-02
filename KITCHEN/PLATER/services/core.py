@@ -36,11 +36,12 @@ class Plater:
         )
         if validate:
             logger.debug('[0] Validation turned on.')
-            validator = PLATER_Validator(self.graph_adapter)
+            reset_summary = settings.get('reset_summary', False)
+            validator = PLATER_Validator(self.graph_adapter, reset_summary=reset_summary)
             # going to call validator
             is_valid_graph = validator.validate(report_to_file=True)
             if not is_valid_graph:
-                logger.warning('Running web server graph is not KGX compliant!!')
+                logger.warning('There were some errors with graph see logs above.')
         self.endpoint_factory = EndpointFactory(self.graph_adapter)
 
     def run_web_server(self):

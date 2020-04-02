@@ -1,19 +1,17 @@
-import copy
 from starlette.requests import Request
-from starlette.responses import JSONResponse, HTMLResponse
-from starlette.schemas import OpenAPIResponse
-from starlette.routing import Route
 from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, JSONResponse
+from starlette.routing import Route
+from starlette.schemas import OpenAPIResponse
 from starlette.staticfiles import StaticFiles
-import urllib.parse
-from jinja2 import Environment, FileSystemLoader
 from swagger_ui_bundle import swagger_ui_3_path
+
+from PLATER.services.config import config
+from PLATER.services.util.bl_helper import BLHelper
+from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.util.logutil import LoggingUtil
 from PLATER.services.util.question import Question
-from PLATER.services.util.bl_helper import BLHelper
-from PLATER.services.config import config
-from PLATER.services.util.graph_adapter import GraphInterface
-
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
@@ -34,6 +32,7 @@ class EndpointFactory:
     SWAGGER_UI_ENDPOINT = 'swagger_ui'
     REASONER_API_ENDPOINT = 'reasonerapi'
     SIMPLE_ONE_HOP_SPEC = 'simple'
+    SUMMARY_ENDPOINT_TYPE = 'graph_summary'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -47,6 +46,7 @@ class EndpointFactory:
             EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(**kwargs),
             EndpointFactory.REASONER_API_ENDPOINT: lambda kwargs: self.create_reasoner_api_endpoint(),
             EndpointFactory.SIMPLE_ONE_HOP_SPEC: lambda kwargs: self.create_simple_one_hop_spec_endpoint(),
+            EndpointFactory.SUMMARY_ENDPOINT_TYPE: lambda kwargs: self.create_graph_summary_api_endpoint()
         }
 
     def create_app(self, build_tag):
@@ -138,6 +138,14 @@ class EndpointFactory:
         endpoints.append(
             self.create_endpoint(
                 EndpointFactory.SIMPLE_ONE_HOP_SPEC
+            )
+        )
+
+        # add graph summary
+
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.SUMMARY_ENDPOINT_TYPE
             )
         )
 
@@ -479,6 +487,34 @@ class EndpointFactory:
                     }
                 }
             }
+            # add schema for graph summary
+
+            paths['/graph/summary'] = {
+                'get': {
+                    'description': 'Returns summary of the graph',
+                    'operationId': 'get_graph_summary',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': {
+                                            'chemical_substance:molecular_entity:named_thing': {
+                                                'gene:biological_entity:named_thing': {'directly_interacts_with': 20}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
             # Add build tag to all the paths
             for path in paths:
                 for method in paths[path]:
@@ -601,6 +637,14 @@ class EndpointFactory:
             else:
                 return await post_handler(request)
         return Route('/reasonerapi', wrapper, methods=['GET', 'POST'])
+
+    def create_graph_summary_api_endpoint(self):
+        async def get_handler(request: Request) -> JSONResponse:
+            self.graph_interface.get_schema()
+            summary = self.graph_interface.summary
+            return JSONResponse(summary)
+
+        return Route('/graph/summary', get_handler)
 
     def create_endpoint(self, endpoint_type, **kwargs) -> Route:
         """

@@ -31,6 +31,8 @@ def parse_args(args):
         heart_beat_thread.start()
     if args.validate:
         settings['validate'] = True
+    if args.rs__reset_summary:
+        settings['reset_summary'] = True
 
     plater = Plater(build_tag=build_tag, settings=settings)
     plater.run_web_server()
@@ -57,6 +59,12 @@ if __name__ == '__main__':
         '-v',
         '--validate',
         help='Validates the graph using KGX Validator. Errors will be reported in the logs dir.',
+        action='store_true'
+    )
+    parser.add_argument(
+        '-rs'
+        '--reset_summary',
+        help='Reset build summary. This will generate a new graph_summary.json in logs dir.',
         action='store_true'
     )
 

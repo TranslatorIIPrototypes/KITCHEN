@@ -28,6 +28,8 @@ class KGXValidator:
         query = "MATCH (n) where not (n)--() return count(n) as node_counts"
         result = self.async_wrapper(self.graph_interface.run_cypher(query))
         result = self.graph_interface.convert_to_dict(result)
+        self.edge_errors_file = os.path.join(os.path.dirname(__file__), '..', 'logs', 'edge_errors.json')
+        self.node_errors_file = os.path.join(os.path.dirname(__file__), '..', 'logs', 'node_errors.json')
         self.island_nodes_count = result[0]['node_counts']
         logger.debug(f'Graph contains {self.path_count} Paths and {self.island_nodes_count} disconnected nodes.')
 
@@ -155,13 +157,12 @@ class KGXValidator:
             logger.info(f'{complete}% complete.')
 
         if report_to_files:
-
             logger.info('Writing report to files.')
-            with open(os.path.join(os.path.dirname(__file__), '..', 'logs', 'node_errors.json'), 'w') as f:
+            with open(self.node_errors_file, 'w') as f:
                 for k in node_errors:
                     node_errors[k] = list(set(node_errors[k]))
                 json.dump(node_errors, f, indent=2)
-            with open(os.path.join(os.path.dirname(__file__), '..', 'logs', 'edge_errors.json'), 'w') as f:
+            with open(self.edge_errors_file, 'w') as f:
                 for k in edge_errors:
                     edge_errors[k] = list(set(edge_errors[k]))
                 json.dump(edge_errors, f, indent=2)
