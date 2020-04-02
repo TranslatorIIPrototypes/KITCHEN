@@ -141,7 +141,9 @@ class Neo4jHTTPDriver:
         :param index_name: Edge index name.
         :return: None
         """
-        logger.debug(f'Checking for edge index `{index_name}`.')
+
+        logger.info(f'Checking for edge index `{index_name}`.')
+
         # first lookup for list of available indexes
         index_query = 'CALL db.indexes()'
         index_type = 'relationship_fulltext'
@@ -149,6 +151,9 @@ class Neo4jHTTPDriver:
         # check if index provided exists for edge type
         filtered_index = [index for index in results if index['indexName'] == index_name]
         if not filtered_index:
+
+            logger.warn(f'Missing edge index {index_name}')
+
             # index doesn't exist create it for every edge type
             # grab edge types and make index for them.
             logger.debug(f'Edge index `{index_name}` not found. Creating ....')
@@ -165,6 +170,9 @@ class Neo4jHTTPDriver:
 
         else:
             # make sure it's the right type
+
+            logger.info(f'Edge index {index_name} found.')
+
             tp = filtered_index[0]['type']
             assert tp == index_type, f'Neo4j reports Index with ' \
                 f'name {index_name} exists, but its a different type ({tp}).' \
@@ -181,14 +189,16 @@ class GraphInterface:
         def __init__(self, host, port, auth):
             self.driver = Neo4jHTTPDriver(host=host, port=port, auth=auth)
             self.schema = None
+            self.summary = None
 
         def get_schema(self):
             """
-            Gets the schema of the graph. To be used by
+            Gets the schema of the graph. To be used by. Also generates graph summary
             :return: Dict of structure source label as outer most keys, target labels as inner keys and list of predicates
             as value.
             :rtype: dict
             """
+            self.schema_raw_result = {}
             if self.schema is None:
                 query = """
                            MATCH (a)-[x]->(b) WITH
@@ -201,6 +211,7 @@ class GraphInterface:
                            """
                 result = self.driver.run_sync(query)
                 structured = self.convert_to_dict(result)
+                self.schema_raw_result = structured
                 schema_bag = {}
                 for triplet in structured:
                     subject = triplet['source_label']
@@ -220,6 +231,38 @@ class GraphInterface:
                     if predicate not in schema_bag[objct][subject]:
                         schema_bag[objct][subject].append(predicate)
                 self.schema = schema_bag
+                if not self.summary:
+                    logger.info('generating graph summary')
+                    query = """
+                    MATCH (c) RETURN DISTINCT labels(c) as types, count(c) as count                
+                    """
+                    raw = self.convert_to_dict(self.driver.run_sync(query))
+                    summary = {
+
+                    }
+                    for node in raw:
+                        labels = node['types']
+                        count = node['count']
+                        query = f"""
+                        MATCH (:{':'.join(labels)})-[e]->(b) WITH DISTINCT e , b 
+                        RETURN 
+                            type(e) as edge_types, 
+                            count(e) as edge_counts,
+                            labels(b) as target_labels 
+                        """
+                        raw = self.convert_to_dict(self.driver.run_sync(query))
+                        summary_key = ':'.join(labels)
+                        summary[summary_key] = {
+                            'nodes_count': count
+                        }
+                        for row in raw:
+                            target_key = ':'.join(row['target_labels'])
+                            edge_name = row['edge_types']
+                            edge_count = row['edge_counts']
+                            summary[summary_key][target_key] = summary[summary_key].get(target_key, {})
+                            summary[summary_key][target_key][edge_name] = edge_count
+                    self.summary = summary
+                    logger.info(f'generated summary for {len(summary)} node types.')
             return self.schema
 
         async def get_mini_schema(self, source_id, target_id):

@@ -3,16 +3,14 @@
 #
 #
 ####################
-import logging
 import requests
-import time
 import uvicorn
 
 from PLATER.services.config import config
-from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
+from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.util.logutil import LoggingUtil
-
+from PLATER.validators.plater_validators import PLATER_Validator
 
 logger = LoggingUtil.init_logging(__name__,
                                   #
@@ -27,8 +25,6 @@ class Plater:
         self.settings = settings
         validate = self.settings.get('validate', False)
         self.config = config
-        if validate:
-            logger.debug('[0] Validation turned on.')
         self.build_tag = build_tag
         self.graph_adapter = GraphInterface(
             self.config.get('NEO4J_HOST'),
@@ -38,6 +34,14 @@ class Plater:
                 self.config.get('NEO4J_PASSWORD')
             )
         )
+        if validate:
+            logger.debug('[0] Validation turned on.')
+            reset_summary = settings.get('reset_summary', False)
+            validator = PLATER_Validator(self.graph_adapter, reset_summary=reset_summary)
+            # going to call validator
+            is_valid_graph = validator.validate(report_to_file=True)
+            if not is_valid_graph:
+                logger.warning('There were some errors with graph see logs above.')
         self.endpoint_factory = EndpointFactory(self.graph_adapter)
 
     def run_web_server(self):
@@ -77,6 +81,6 @@ class Plater:
                 resp = requests.post(automat_heart_beat_url, json=payload, timeout=0.5)
                 logger.debug(f'heartbeat to {automat_host} returned {resp.status_code}')
             except Exception as e:
-                logger.error(f'[X] Error contacting automat sever {e}')
+                logger.error(f'[X] Error contacting automat server {e}')
             time.sleep(heart_rate)
 
