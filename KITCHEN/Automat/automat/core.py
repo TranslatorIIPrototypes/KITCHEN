@@ -4,16 +4,15 @@ from automat.config import config
 from automat.util.logutil import LoggingUtil
 from automat.util.async_client import async_get_json, async_get_response, async_post_json
 from starlette.responses import JSONResponse, HTMLResponse
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, PackageLoader
 from swagger_ui_bundle import swagger_ui_3_path
 from starlette.staticfiles import StaticFiles
 import json
-import yaml
+
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
-                                  config.get('logging_format'),
-                                  config.get('logging_file_path')
+                                  config.get('logging_format')
                                   )
 
 
@@ -165,12 +164,14 @@ class Automat:
     @staticmethod
     def setup_swagger_ui_html():
         env = Environment(
-            loader=FileSystemLoader(swagger_ui_3_path)
+            loader=PackageLoader('automat', 'templates')
         )
-        template = env.get_template('index.j2')
+        template = env.get_template('swagger_ui.j2')
         html_content = template.render(
-            title=f'Automat',
+            title='Automat',
             openapi_spec_url="./openapi.yml",
+            ui_version='3.24.2',
+            doc_expansion='none'
         )
         return html_content
 
