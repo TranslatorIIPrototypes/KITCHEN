@@ -1,13 +1,17 @@
 FROM python:3.8.1-buster
 
-RUN mkdir /code
-RUN mkdir -p /code/PLATER
-COPY ./ /code/PLATER
-WORKDIR /code/PLATER
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -o -g $GID plater
+RUN useradd -m -u $UID -g $GID -s /bin/bash plater
+WORKDIR /home/plater
+RUN git clone https://github.com/TranslatorIIPrototypes/KITCHEN.git
+WORKDIR /home/plater/KITCHEN/KITCHEN/PLATER
+ENV PYTHONPATH=/home/plater/KITCHEN/KITCHEN/
 
-RUN pip install -r /code/PLATER/requirements.txt
-
+RUN pip install -r requirements.txt
 EXPOSE 8080
-
-ENV PYTHONPATH=/code
+VOLUME logs
+RUN chown plater:plater logs
+USER plater
 ENTRYPOINT ["python", "main.py"]
