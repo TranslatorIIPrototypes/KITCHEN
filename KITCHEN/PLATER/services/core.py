@@ -3,14 +3,12 @@
 #
 #
 ####################
-import logging
 import requests
-import time
 import uvicorn
 
 from PLATER.services.config import config
-from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.endpoint_factory import EndpointFactory
+from PLATER.services.util.graph_adapter import GraphInterface
 from PLATER.services.util.logutil import LoggingUtil
 from PLATER.validators.plater_validators import PLATER_Validator
 
@@ -26,13 +24,6 @@ class Plater:
 
         self.settings = settings
         validate = self.settings.get('validate', False)
-        if validate:
-            logger.debug('[0] Validation turned on.')
-            self.validator = PLATER_Validator()
-            # going to call validator
-            is_valid_graph = self.validator.validate(report_to_file=True)
-            if not is_valid_graph:
-                logger.warning('Running web server graph is not KGX compliant!!')
         self.config = config
         self.build_tag = build_tag
         self.graph_adapter = GraphInterface(
@@ -43,6 +34,13 @@ class Plater:
                 self.config.get('NEO4J_PASSWORD')
             )
         )
+        if validate:
+            logger.debug('[0] Validation turned on.')
+            validator = PLATER_Validator(self.graph_adapter)
+            # going to call validator
+            is_valid_graph = validator.validate(report_to_file=True)
+            if not is_valid_graph:
+                logger.warning('Running web server graph is not KGX compliant!!')
         self.endpoint_factory = EndpointFactory(self.graph_adapter)
 
     def run_web_server(self):
@@ -82,6 +80,6 @@ class Plater:
                 resp = requests.post(automat_heart_beat_url, json=payload, timeout=0.5)
                 logger.debug(f'heartbeat to {automat_host} returned {resp.status_code}')
             except Exception as e:
-                logger.error(f'[X] Error contacting automat sever {e}')
+                logger.error(f'[X] Error contacting automat server {e}')
             time.sleep(heart_rate)
 
