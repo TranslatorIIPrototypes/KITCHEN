@@ -1,17 +1,14 @@
 from starlette.requests import Request
 from starlette.applications import Starlette
+
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Route
 from starlette.schemas import OpenAPIResponse
-from starlette.staticfiles import StaticFiles
-from swagger_ui_bundle import swagger_ui_3_path
 
-from PLATER.services.config import config
 from PLATER.services.util.bl_helper import BLHelper
+from PLATER.services.config import config
 from PLATER.services.util.graph_adapter import GraphInterface
-from PLATER.services.util.logutil import LoggingUtil
-from PLATER.services.util.question import Question
 
 logger = LoggingUtil.init_logging(__name__,
                                   config.get('logging_level'),
