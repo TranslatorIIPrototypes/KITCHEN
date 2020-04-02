@@ -110,11 +110,6 @@ class Automat:
         registry_formatted = list(self.registry.get_registry().keys())
         await Automat.send_json_response(scope, receive, send, registry_formatted, 200)
 
-    # /<Swagger ui files>
-    @staticmethod
-    async def handle_static_files(scope, receive, send):
-        static_file = StaticFiles(directory=swagger_ui_3_path)
-        await static_file(scope, receive, send)
 
     # /apidocs
     async def handle_swagger_docs(self, scope, recieve, send):
@@ -154,10 +149,6 @@ class Automat:
             logger.debug(f'[0] found entry for backend server {root_path} --- {backend_sever_url}')
             await self.handle_route_to_backend(scope, receive, send, backend_sever_url, path[1:])
             return
-        try:
-            await self.handle_static_files(scope, receive, send)
-        except Exception as e:
-            logger.error(e)
 
     @staticmethod
     def setup_swagger_ui_html():
