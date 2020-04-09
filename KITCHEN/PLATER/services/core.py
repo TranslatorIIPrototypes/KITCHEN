@@ -63,7 +63,6 @@ class Plater:
     def send_heart_beat(automat_host, build_tag):
         import time
         heart_rate = config.get('heart_rate', 30)
-        logging.getLogger('requests').setLevel(logging.CRITICAL)
         logger.debug(f'contacting {automat_host}')
         automat_heart_beat_url = f'{automat_host}/heartbeat'
         plater_address = config.get('PLATER_SERVICE_ADDRESS')
