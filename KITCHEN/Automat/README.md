@@ -88,8 +88,8 @@ docker run --rm --name plater \
 
 #### Demo
 
-A demo docker compose file is found in KITCHEN/KITCHEN/Automat/demo. To run 
-it :
+A demo docker compose file is found in `KITCHEN/KITCHEN/Automat/demo`. To run 
+add config parameters to the `.env.sample` save it as `.env`:
 ```bash
 cd KITCHEN/KITCHEN/Automat/demo
 docker-compose up 
