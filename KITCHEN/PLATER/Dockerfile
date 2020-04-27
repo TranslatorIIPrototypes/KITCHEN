@@ -11,6 +11,7 @@ ENV PYTHONPATH=/home/plater/KITCHEN/KITCHEN/
 
 RUN pip install -r requirements.txt
 EXPOSE 8080
+VOLUME logs
 RUN chown plater:plater logs
 USER plater
 ENTRYPOINT ["python", "main.py"]

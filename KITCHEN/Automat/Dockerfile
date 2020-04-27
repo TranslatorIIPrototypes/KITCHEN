@@ -10,7 +10,7 @@ WORKDIR /home/plater/KITCHEN/KITCHEN/Automat
 
 RUN pip install -r requirements.txt
 
-EXPOSE 8090
+EXPOSE 8081
 RUN mkdir -p /home/plater/KITCHEN/KITCHEN/Automat/logs
 RUN chown automat:automat logs
 USER automat

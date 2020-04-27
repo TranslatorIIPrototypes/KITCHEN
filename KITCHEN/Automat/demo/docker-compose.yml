@@ -1,0 +1,53 @@
+version: "3"
+services:
+  automat:
+    container_name: automat
+    image: renciorg/automat
+    ports:
+      - 8090:8090
+    environment:
+      - WEB_HOST=${AUTOMAT_WEB_HOST}
+      - WEB_PORT=${AUTOMAT_WEB_PORT}
+    volumes:
+      - ./logs:/home/plater/KITCHEN/KITCHEN/Automat/logs
+  plater:
+    container_name: plater
+    image: renciorg/plater
+    environment:
+      - NEO4J_HOST=neo4j_demo_kp
+      - NEO4J_HTTP_PORT=${NEO4J_HTTP_PORT}
+      - NEO4J_USERNAME=${NEO4J_USERNAME}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - WEB_HOST=${PLATER_WEB_HOST}
+      - WEB_PORT=${PLATER_WEB_PORT}
+      - PLATER_SERVICE_ADDRESS=plater # change this to container name so automat can talk back to plater
+    entrypoint:
+      - ./wait_for_neo4j.sh
+    command:
+      - --automat_host
+      - http://automat:${AUTOMAT_WEB_PORT} # pass automat address
+        #      - --validate # turn on kgx validation, validation results will be placed under logs
+        # - --reset_summary # this option will reset the graph diff file in logs,
+        # the graph diff file will help compare
+        # graphs that this instance has served. Useful in detecting changes between new graph
+      # deployments.
+      - my_plater # `Build-tag`,    this is the tag that it will appear as in automat
+    volumes:
+      - ./logs:/home/plater/KITCHEN/KITCHEN/PLATER/logs
+      - ./wait_for_neo4j.sh:/home/plater/KITCHEN/KITCHEN/PLATER/wait_for_neo4j.sh
+  neo4j:
+    image: renciorg/neo4jkp
+    container_name: neo4j_demo_kp
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_dbms_connectors_default__listen__address=0.0.0.0
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*  # un-sandbox apoc procedures: http://blog.armbruster-it.de/2017/05/running-neo4j-3-2-apoc-docker/
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_heap_initial__size=2G
+      - NEO4J_dbms_memory_pagecache_size=500M
+    entrypoint:
+      - /bootstrap_neo4j.sh
+    volumes:
+      - ./bootstrap_neo4j.sh:/bootstrap_neo4j.sh
+      - ./logs:/logs
+      - ./neo_data:/data
