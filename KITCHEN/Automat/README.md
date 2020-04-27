@@ -81,9 +81,10 @@ Run plater via docker
 cd <KITCHEN-DIR>/KITCHEN/PLATER
 docker build --tag plater . 
 docker run --rm --name plater \
+       --network automat_default \ 
        --env PLATER_SERVICE_ADDRESS=plater plater \
-       --automat_host http://automat:8081 
-       \ <build_tag>
+       --automat_host http://automat:8081 \ 
+       <build_tag>
 ```
 
 #### Demo
