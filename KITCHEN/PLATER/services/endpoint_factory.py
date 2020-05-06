@@ -291,7 +291,9 @@ class EndpointFactory:
                 'get': {
                     'description': f'Returns one hop paths from `source_node_type`  with `curie` to `target node '
                     f'type`.',
-                    'summary': f'Get one hop results from source type to target type.',
+                    'summary': f'Get one hop results from source type to target type. Note: Please refer'
+                    f' to `graph/schema` endpoint output to determine what target goes with a'
+                    f' a source',
                     'operationId': f'get_one_hop_source_node_type_to_target_node_type',
                     'parameters': [
                         {
