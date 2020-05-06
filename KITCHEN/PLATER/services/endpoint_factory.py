@@ -224,74 +224,121 @@ class EndpointFactory:
             graph_schema = self.graph_interface.get_schema()
             # lets hold on to an example so we can use it later in reasoner api spec.
             last_curie = ''
-
+            node_example = None
+            one_hop_example = None
+            source_type_list = []
+            target_type_list = []
             for source_node in graph_schema:
+                source_type_list += [source_node]
                 target_nodes = graph_schema[source_node]
                 # add /<source_type>/curie path
-                example = await self.graph_interface.get_examples(source_node)
-                last_curie = example[0].get('id', '') if example else last_curie
-                paths[f'/{source_node}/{{curie}}'] = {
-                    'get': {
-                        'description': f'Returns `{source_node}` based on `curie`.',
-                        'summary': f'Find {source_node} by curie.',
-                        'operationId': f'get_{source_node}_by_curie',
-                        'parameters': [{
+                if not node_example:
+                    node_example = await self.graph_interface.get_examples(source_node)
+                    last_curie = node_example[0].get('id', '') if node_example else last_curie
+                # add /<source_type>/<target_type>/curie paths
+                for target_node in target_nodes:
+                    target_type_list.append(target_node)
+                    if not one_hop_example:
+                        one_hop_example = await self.graph_interface.get_examples(source_node, target_node)
+
+            # remove duplicate items from source type list and target type list
+            source_type_list = list(set(source_type_list))
+            target_type_list = list(set(target_type_list))
+
+            paths[f'/{{node_type}}/{{curie}}'] = {
+                'get': {
+                    'description': f'Returns `node` matching `curie`.',
+                    'summary': f'Find `node` by `curie`.',
+                    'operationId': f'get_source_node_by_curie',
+                    'parameters': [
+                        {
+                            'name': 'node_type',
+                            'in': 'path',
+                            'description': f'Type of the to look for.',
+                            'required': True,
+                            'schema': {
+                                'type': 'string',
+                                'enum': source_type_list
+                            }
+                        },
+                        {
                             'name': 'curie',
                             'in': 'path',
-                            'description': f'The curie of {source_node} that needs to be fetched.',
+                            'description': f'The curie of `source_node` that needs to be fetched.',
                             'required': True,
                             'schema': {
                                 'type': 'string'
                             }
-                        }],
-                        'responses': {
-                            '200': {
-                                'description': 'OK',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            'type': 'object',
-                                            'example': example
-                                        }
+                        }
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': node_example
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                # add /<source_type>/<target_type>/curie paths
-                for target_node in target_nodes:
-                    example = await self.graph_interface.get_examples(source_node, target_node)
-                    paths[f'/{source_node}/{target_node}/{{curie}}'] = {
-                        'get': {
-                            'description': f'Returns one hop paths from {source_node} with `curie` to target type {target_node}.',
-                            'summary': f'Get one hop results from {source_node} to {target_node}.',
-                            'operationId': f'get_one_hop_{source_node}_to_{target_node}',
-                            'parameters': [{
-                                'name': 'curie',
-                                'in': 'path',
-                                'description': f'The curie of {source_node} that path starts from.',
-                                'required': True,
-                                'schema': {
-                                    'type': 'string'
-                                }
-                            }],
-                            'responses': {
-                                '200': {
-                                    'description': 'OK',
-                                    'content': {
-                                        'application/json': {
-                                            'schema': {
-                                                'type': 'object',
-                                                'example': example
-                                            }
-                                        }
+            paths[f'/{{source_node_type}}/{{target_node_type}}/{{curie}}'] = {
+                'get': {
+                    'description': f'Returns one hop paths from `source_node_type`  with `curie` to `target node '
+                    f'type`.',
+                    'summary': f'Get one hop results from source type to target type. Note: Please refer'
+                    f' to `graph/schema` endpoint output to determine what target goes with a source',
+                    'operationId': f'get_one_hop_source_node_type_to_target_node_type',
+                    'parameters': [
+                        {
+                            'name': 'source_node_type',
+                            'in': 'path',
+                            'description': f'The node type of source node in the path.',
+                            'required': True,
+                            'schema': {
+                                'type': 'string',
+                                'enum': source_type_list
+                            }
+                        }, {
+                            'name': 'target_node_type',
+                            'in': 'path',
+                            'description': f'The node type of target node in the path.',
+                            'required': True,
+                            'schema': {
+                                'type': 'string',
+                                'enum': target_type_list
+                            }
+                        },
+                        {
+                            'name': 'curie',
+                            'in': 'path',
+                            'description': f'The `curie` for the `source_node_type` that path starts from.',
+                            'required': True,
+                            'schema': {
+                                'type': 'string'
+                            }
+                        }
+                    ],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': one_hop_example
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
 
             # adding schema to openapi spec
 

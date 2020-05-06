@@ -120,12 +120,8 @@ def test_open_api_schema_response(client, graph_interface):
     assert response.status_code == 200
     open_spec = response.json()
     schema = graph_interface.get_schema()
-    # assert that the types have paths in the open api spec and also ch
-    print(open_spec)
-    for top_types, links in schema.items():
-        assert f'/{top_types}/{{curie}}' in open_spec['paths']
-        for link_types in links:
-            assert f'/{top_types}/{link_types}/{{curie}}' in open_spec['paths']
+    assert f'/{{node_type}}/{{curie}}' in open_spec['paths']
+    assert f'/{{source_node_type}}/{{target_node_type}}/{{curie}}' in open_spec['paths']
     assert '/simple_spec' in open_spec['paths']
     assert '/reasonerapi' in open_spec['paths']
     assert '/cypher' in open_spec['paths']
