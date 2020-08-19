@@ -571,10 +571,10 @@ class EndpointFactory:
             overlay_eg = {
                 'query_graph': {
                     'nodes': [
-                        {'id': 'n0', 'type': 'named_thing', 'curie': 'NCBIGene:93034'},
+                        {'id': 'n1', 'type': 'named_thing', 'curie': 'NCBIGene:93034'},
                         {'id': 'n2', 'type': 'named_thing'},
                     ], 'edges': [
-                        {'id': 'e0', 'source_id': 'n0', 'target_id': 'n1'}
+                        {'id': 'e0', 'source_id': 'n1', 'target_id': 'n2'}
                     ]
                 },
                 'knowledge_graph': {
