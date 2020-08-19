@@ -33,6 +33,7 @@ class EndpointFactory:
     REASONER_API_ENDPOINT = 'reasonerapi'
     SIMPLE_ONE_HOP_SPEC = 'simple'
     SUMMARY_ENDPOINT_TYPE = 'graph_summary'
+    OVERLAY_ENDPOINT = 'overlay'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -46,7 +47,8 @@ class EndpointFactory:
             EndpointFactory.SWAGGER_UI_ENDPOINT: lambda kwargs: self.create_swagger_ui_endpoint(**kwargs),
             EndpointFactory.REASONER_API_ENDPOINT: lambda kwargs: self.create_reasoner_api_endpoint(),
             EndpointFactory.SIMPLE_ONE_HOP_SPEC: lambda kwargs: self.create_simple_one_hop_spec_endpoint(),
-            EndpointFactory.SUMMARY_ENDPOINT_TYPE: lambda kwargs: self.create_graph_summary_api_endpoint()
+            EndpointFactory.SUMMARY_ENDPOINT_TYPE: lambda kwargs: self.create_graph_summary_api_endpoint(),
+            EndpointFactory.OVERLAY_ENDPOINT: lambda kwargs: self.create_overlay_api_endpoint(),
         }
 
     def create_app(self, build_tag):
@@ -146,6 +148,13 @@ class EndpointFactory:
         endpoints.append(
             self.create_endpoint(
                 EndpointFactory.SUMMARY_ENDPOINT_TYPE
+            )
+        )
+
+        # overlay endpoint
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.OVERLAY_ENDPOINT
             )
         )
 
@@ -559,7 +568,141 @@ class EndpointFactory:
                     }
                 }
             }
-
+            overlay_eg = {
+                'query_graph': {
+                    'nodes': [
+                        {'id': 'n1', 'type': 'named_thing', 'curie': 'NCBIGene:93034'},
+                        {'id': 'n2', 'type': 'named_thing'},
+                    ], 'edges': [
+                        {'id': 'e0', 'source_id': 'n1', 'target_id': 'n2'}
+                    ]
+                },
+                'knowledge_graph': {
+                    'nodes': [
+                        {
+                            "synonyms": [],
+                            "name": "NT5C1B",
+                            "id": "NCBIGene:93034",
+                            "equivalent_identifiers": [
+                                "NCBIGene:93034",
+                                "HGNC:17818",
+                                "UniProtKB:Q96P26",
+                                "ENSEMBL:ENSG00000185013",
+                                "NCBIGene:93034",
+                                "IUPHAR:1235"
+                            ],
+                            "type": [
+                                "named_thing",
+                                "biological_entity",
+                                "molecular_entity",
+                                "gene",
+                                "gene_or_gene_product",
+                                "macromolecular_machine",
+                                "genomic_entity"
+                            ]
+                        }, {
+                            "name": "",
+                            "id": "CHEBI:14648",
+                            "equivalent_identifiers": [
+                                "PUBCHEM:14181",
+                                "CHEBI:14648",
+                                "INCHIKEY:DAYLJWODMCOQEW-TURQNECASA-O",
+                                "HMDB:HMDB0059645"
+                            ],
+                            "type": [
+                                "named_thing",
+                                "biological_entity",
+                                "chemical_substance",
+                                "molecular_entity"
+                            ]
+                        }
+                    ],
+                    'edges': [
+                        {
+                            "predicate_id": "RO:0002434",
+                            "relation_label": "interacts with",
+                            "edge_source": "hmdb.enzyme_to_metabolite",
+                            "target_id": "NCBIGene:93034",
+                            "source_id": "CHEBI:14648",
+                            "id": "b80d",
+                            "type": "interacts_with",
+                            "source_database": "hmdb",
+                            "relation": "RO:0002434",
+                            "publications": []
+                        }
+                    ]
+                },
+                'results': [
+                    {
+                        "edge_bindings": [
+                            {
+                                "kg_id": "b80d",
+                                "qg_id": "e0"
+                            }
+                        ],
+                        "node_bindings": [
+                            {
+                                "kg_id": "NCBIGene:93034",
+                                "qg_id": "n1"
+                            },
+                            {
+                                "kg_id": "CHEBI:14648",
+                                "qg_id": "n2"
+                            }
+                        ]
+                    },
+                ]
+            }
+            import copy
+            overlay_eg_copy = copy.deepcopy(overlay_eg)
+            overlay_eg_copy['results'][0]['edge_bindings'].append({'kg_id': 'support_edge_id', 'q_id': 's_0'})
+            overlay_eg_copy['knowledge_graph']['edges'].append(
+                {
+                    "predicate_id": "RO:0002434",
+                    "relation_label": "interacts with",
+                    "edge_source": "hmdb.enzyme_to_metabolite",
+                    "target_id": "NCBIGene:93034",
+                    "source_id": "CHEBI:14648",
+                    "id": "support_edge_id",
+                    "type": "interacts_with",
+                    "source_database": "hmdb",
+                    "relation": "RO:0002434",
+                    "publications": []
+                }
+            )
+            paths['/overlay'] = {
+                'post': {
+                    'description': 'Given a reasonerAPI graph add support edges for any nodes linked in result '
+                                   'bindings.',
+                    'operationId': 'post_reasoner_api_graph',
+                    'requestBody': {
+                        'description': 'Reasoner api graph.',
+                        'content': {
+                            'application/json': {
+                                'schema': {
+                                    'type': 'object',
+                                    'example': overlay_eg
+                                }
+                            }
+                        },
+                        'allowEmptyValue': False,
+                        'required': True
+                    },
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': overlay_eg_copy
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             # Add build tag to all the paths
             for path in paths:
@@ -693,6 +836,20 @@ class EndpointFactory:
             return JSONResponse(summary)
 
         return Route('/graph/summary', get_handler)
+
+    def create_overlay_api_endpoint(self):
+
+        async def post_handler(request: Request) -> JSONResponse:
+            try:
+                request_json = await request.json()
+                question = Question(request_json)
+            except Exception as e:
+                return JSONResponse({"Error": f"{str(type(e))} - {e}"}, 400)
+            from PLATER.services.util.overlay import Overlay
+            overlay_class = Overlay(self.graph_interface)
+            return JSONResponse(await overlay_class.overlay_support_edges(request_json))
+
+        return Route('/overlay', post_handler, methods=['POST'])
 
     def create_endpoint(self, endpoint_type, **kwargs) -> Route:
         """

@@ -20,6 +20,7 @@ class Neo4jHTTPDriver:
         self._scheme = scheme
         self._full_transaction_path = f"{self._scheme}://{self._host}:{port}{self._neo4j_transaction_endpoint}"
         self._port = port
+        self._supports_apoc = None
         self._header = {
                 'Accept': 'application/json; charset=UTF-8',
                 'Content-Type': 'application/json',
@@ -29,6 +30,9 @@ class Neo4jHTTPDriver:
         logger.debug('PINGING NEO4J')
         self.ping()
         self.make_indexes(config.get('edge_index_name', 'edge_id_index'))
+        logger.debug('CHECKING IF NEO4J SUPPORTS APOC')
+        self.check_apoc_support()
+        logger.debug(f'SUPPORTS APOC : {self._supports_apoc}')
 
     async def post_request_json(self, payload):
         tcp_connector = aiohttp.TCPConnector(limit=60)
@@ -178,6 +182,16 @@ class Neo4jHTTPDriver:
                 f'name {index_name} exists, but its a different type ({tp}).' \
                 f'It needs to of type {index_type}'
         return results
+
+    def check_apoc_support(self):
+        apoc_version_query = 'call apoc.help("meta")'
+        if self._supports_apoc is None:
+            try:
+                self.run_sync(apoc_version_query)
+                self._supports_apoc = True
+            except:
+                self._supports_apoc = False
+        return self._supports_apoc
 
 
 class GraphInterface:
@@ -380,6 +394,33 @@ class GraphInterface:
                 response = await self.run_cypher(query)
                 final = list(map(lambda node: node[source], self.driver.convert_to_dict(response)))
                 return final
+
+        def supports_apoc(self):
+            """
+            Returns true if apoc is supported by backend database.
+            :return: bool true if neo4j supports apoc.
+            """
+            return self.driver.check_apoc_support()
+
+        async def run_apoc_cover(self, ids: list):
+            """
+            Runs apoc.algo.cover on list of ids
+            :param ids:
+            :return: dictionary of edges and source and target nodes ids
+            """
+            query = f"""
+                        MATCH (node:named_thing)
+                        USING INDEX node:named_thing(id)
+                        WHERE node.id in {ids}
+                        WITH collect(node) as nodes
+                        CALL apoc.algo.cover(nodes) yield rel
+                        WITH {{source_id: startNode(rel).id ,
+                               target_id: endNode(rel).id,
+                               edge: rel }} as row
+                        return collect(row) as result                                        
+                        """
+            result = self.convert_to_dict(self.driver.run_sync(query))
+            return result
 
         def convert_to_dict(self, result):
             return self.driver.convert_to_dict(result)
