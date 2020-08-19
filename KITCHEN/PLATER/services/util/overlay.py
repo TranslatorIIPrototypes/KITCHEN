@@ -19,7 +19,7 @@ class Overlay:
         added_edge_ids = set()
         edges_to_add = list()
         overlayed_answers = list()
-        chunk_size = 1
+        chunk_size = 1000
         chunked_answers = [reasoner_graph[Question.ANSWERS_KEY][start: start + chunk_size]
                            for start in range(0, len(reasoner_graph[Question.ANSWERS_KEY]), chunk_size)]
         for answer in chunked_answers:
