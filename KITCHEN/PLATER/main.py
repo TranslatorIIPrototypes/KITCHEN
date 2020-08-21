@@ -19,23 +19,14 @@ def parse_args(args):
     """
     settings = {}
     build_tag = args.build_tag
-    if args.automat_host:
-        logger.debug(f'Running in clustered mode about to join {args.automat_host}')
 
-        # start heart beat thread.
-        heart_beat_thread = threading.Thread(
-            target=Plater.send_heart_beat,
-            args=(args.automat_host, build_tag),
-            daemon=True
-        )
-        heart_beat_thread.start()
     if args.validate:
         settings['validate'] = True
     if args.rs__reset_summary:
         settings['reset_summary'] = True
 
     plater = Plater(build_tag=build_tag, settings=settings)
-    plater.run_web_server()
+    plater.run_web_server(automat_host=args.automat_host)
 
 
 if __name__ == '__main__':
