@@ -1,6 +1,6 @@
 import urllib
 
-from jinja2 import Environment, PackageLoader, FileSystemLoader
+from jinja2 import Environment, PackageLoader
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
@@ -787,7 +787,7 @@ class EndpointFactory:
        """
         # build Swagger UI
         env = Environment(
-            loader=FileSystemLoader("C:\\Users\\kebedey\\TranslatorII\\KITCHEN\\KITCHEN\\PLATER\\templates")
+            loader=PackageLoader('PLATER', 'templates')
             # PackageLoader('PLATER', 'templates')
         )
         template = env.get_template('swagger_ui.j2')
