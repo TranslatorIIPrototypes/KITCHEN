@@ -44,7 +44,7 @@ class Plater:
                 logger.warning('There were some errors with graph see logs above.')
         self.endpoint_factory = EndpointFactory(self.graph_adapter)
 
-    def run_web_server(self):
+    def run_web_server(self, automat_host=None):
         """
         Runs a Uvicorn web server instance by creating a starlette app on the setup.
         Expects neo4j to be up.
@@ -53,11 +53,17 @@ class Plater:
         app = self.endpoint_factory.create_app(self.build_tag)
         web_server_host = self.config.get('WEB_HOST', '127.0.0.1')
         web_server_port: int = int(self.config.get('WEB_PORT', 8080))
-        uvicorn.run(
-            app,
-            host=web_server_host,
-            port=web_server_port
-        )
+        if automat_host:
+            logger.debug(f'Running in clustered mode about to join {automat_host}')
+            import threading
+            # start heart beat thread.
+            heart_beat_thread = threading.Thread(
+                target=Plater.send_heart_beat,
+                args=(automat_host, self.build_tag),
+                daemon=True
+            )
+            heart_beat_thread.start()
+        uvicorn.run(app, host=web_server_host, port=web_server_port)
 
     @staticmethod
     def send_heart_beat(automat_host, build_tag):

@@ -1,6 +1,6 @@
 import urllib
 
-from jinja2 import Environment, PackageLoader
+from jinja2 import Environment, PackageLoader, FileSystemLoader
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
@@ -34,11 +34,13 @@ class EndpointFactory:
     SIMPLE_ONE_HOP_SPEC = 'simple'
     SUMMARY_ENDPOINT_TYPE = 'graph_summary'
     OVERLAY_ENDPOINT = 'overlay'
+    ABOUT_ENDPOINT = 'about'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
         self.bl_helper = BLHelper(config.get('BL_HOST', 'https://bl-lookup-sri.renci.org'))
         self._endpoint_loader = {
+            EndpointFactory.ABOUT_ENDPOINT: lambda kwargs: self.create_about_endpoint(),
             EndpointFactory.HOP_ENDPOINT_TYPE: lambda kwargs: self.create_hop_endpoint(**kwargs),
             EndpointFactory.NODE_ENDPOINT_TYPE: lambda kwargs: self.create_node_endpoint(**kwargs),
             EndpointFactory.CYPHER_ENDPOINT_TYPE: lambda kwargs: self.create_cypher_endpoint(),
@@ -158,6 +160,13 @@ class EndpointFactory:
             )
         )
 
+        # About endpoint
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.ABOUT_ENDPOINT
+            )
+        )
+
         routes = list(map(lambda endpoint: endpoint, endpoints))
         app = Starlette(
             debug=int(config.get('logging_level')) == 10,
@@ -253,6 +262,34 @@ class EndpointFactory:
             # remove duplicate items from source type list and target type list
             source_type_list = list(set(source_type_list))
             target_type_list = list(set(target_type_list))
+
+            # add about endpoint
+            paths['/about'] = {
+                'get': {
+                    'description': 'Returns a json describing dataset.',
+                    'summary': 'Json about dataset.',
+                    'operationId': 'about_dataset',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': {
+                                            'dataset-version': 'N/A',
+                                            'dataset-description': 'Add dataset version here',
+                                            'code-used': 'link to repo',
+                                            'date-generated': 'N/A'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             paths[f'/{{node_type}}/{{curie}}'] = {
                 'get': {
@@ -750,14 +787,16 @@ class EndpointFactory:
        """
         # build Swagger UI
         env = Environment(
-            loader=PackageLoader('PLATER', 'templates')
+            loader=FileSystemLoader("C:\\Users\\kebedey\\TranslatorII\\KITCHEN\\KITCHEN\\PLATER\\templates")
+            # PackageLoader('PLATER', 'templates')
         )
         template = env.get_template('swagger_ui.j2')
         html_content = template.render(
             title=f'Plater - {build_tag}',
             openapi_spec_url="./openapi.json",
             ui_version='3.24.2',
-            doc_expansion='none'
+            doc_expansion='none',
+            description='test'
         )
 
         async def swagger_doc_handler(request):
@@ -850,6 +889,18 @@ class EndpointFactory:
             return JSONResponse(await overlay_class.overlay_support_edges(request_json))
 
         return Route('/overlay', post_handler, methods=['POST'])
+
+    def create_about_endpoint(self):
+        async def get_handler(request: Request) -> JSONResponse:
+            # try:
+            with open('about.json') as f:
+                import json
+                about_json = json.load(f)
+                return JSONResponse(about_json)
+            # except:
+            #     return JSONResponse({"Error": "about.json file not found, or is not json parsable."}, 500)
+
+        return Route('/about', get_handler)
 
     def create_endpoint(self, endpoint_type, **kwargs) -> Route:
         """

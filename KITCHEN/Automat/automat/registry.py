@@ -32,7 +32,7 @@ class Registry:
     # OFFLINE if last seen is age + TTL_OFFLINE
     TTL_WARNING = 2
     TTL_OFFLINE = 3
-    TTL_DELETE_ENTRY = 10*60  # Delete if last update was more than a minute.
+    TTL_DELETE_ENTRY = 1 * 60  # Delete if last update was more than a minute.
     TTL_ALIVE = 0
     LABELS = {
         TTL_WARNING: 'warn ',
