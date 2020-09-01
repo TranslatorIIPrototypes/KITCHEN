@@ -35,6 +35,7 @@ class EndpointFactory:
     SUMMARY_ENDPOINT_TYPE = 'graph_summary'
     OVERLAY_ENDPOINT = 'overlay'
     ABOUT_ENDPOINT = 'about'
+    PREDICATES_ENDPOINT = 'predicates'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -51,6 +52,7 @@ class EndpointFactory:
             EndpointFactory.SIMPLE_ONE_HOP_SPEC: lambda kwargs: self.create_simple_one_hop_spec_endpoint(),
             EndpointFactory.SUMMARY_ENDPOINT_TYPE: lambda kwargs: self.create_graph_summary_api_endpoint(),
             EndpointFactory.OVERLAY_ENDPOINT: lambda kwargs: self.create_overlay_api_endpoint(),
+            EndpointFactory.PREDICATES_ENDPOINT: lambda kwargs: self.create_predicates_endpoint(),
         }
 
     def create_app(self, build_tag):
@@ -165,6 +167,10 @@ class EndpointFactory:
             self.create_endpoint(
                 EndpointFactory.ABOUT_ENDPOINT
             )
+        )
+
+        endpoints.append(
+            self.create_predicates_endpoint()
         )
 
         routes = list(map(lambda endpoint: endpoint, endpoints))
@@ -390,10 +396,38 @@ class EndpointFactory:
 
             paths['/graph/schema'] = {
                 'get': {
+                    'deprecated': True,
                     'description': 'Returns an object where outer keys represent source types with second level keys as '
                                    'targets. And the values of the second level keys is the type of possible edge types'
                                    'that connect these concepts.',
                     'operationId': 'get_graph_schema',
+                    'parameters': [],
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': {
+                                            'chemical_substance': {
+                                                'gene': ['directly_interacts_with']
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            paths['/predicates'] = {
+                'get': {
+                    'description': 'Returns an object where outer keys represent source types with second level keys '
+                                   'as '
+                                   'targets. And the values of the second level keys is the type of possible edge types'
+                                   'that connect these concepts.',
+                    'operationId': 'get_predicates',
                     'parameters': [],
                     'responses': {
                         '200': {
@@ -756,6 +790,15 @@ class EndpointFactory:
             return JSONResponse(schema)
 
         return Route('/openapi.json', get_handler)
+
+    def create_predicates_endpoint(self):
+        graph_interface = self.graph_interface
+
+        async def get_handler(request):
+            response = graph_interface.get_schema()
+            return JSONResponse(response)
+
+        return Route('/predicates', get_handler)
 
     def create_graph_schema_endpoint(self):
         """
