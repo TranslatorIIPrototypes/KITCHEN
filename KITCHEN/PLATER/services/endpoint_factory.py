@@ -36,6 +36,7 @@ class EndpointFactory:
     OVERLAY_ENDPOINT = 'overlay'
     ABOUT_ENDPOINT = 'about'
     PREDICATES_ENDPOINT = 'predicates'
+    QUERY_ENDPOINT = 'query'
 
     def __init__(self, graph_interface: GraphInterface):
         self.graph_interface = graph_interface
@@ -53,6 +54,7 @@ class EndpointFactory:
             EndpointFactory.SUMMARY_ENDPOINT_TYPE: lambda kwargs: self.create_graph_summary_api_endpoint(),
             EndpointFactory.OVERLAY_ENDPOINT: lambda kwargs: self.create_overlay_api_endpoint(),
             EndpointFactory.PREDICATES_ENDPOINT: lambda kwargs: self.create_predicates_endpoint(),
+            EndpointFactory.QUERY_ENDPOINT: lambda kwargs: self.create_query_api_endpoint(),
         }
 
     def create_app(self, build_tag):
@@ -169,6 +171,13 @@ class EndpointFactory:
             )
         )
 
+        # query endpoint
+        endpoints.append(
+            self.create_endpoint(
+                EndpointFactory.QUERY_ENDPOINT
+            )
+        )
+
         endpoints.append(
             self.create_predicates_endpoint()
         )
@@ -274,7 +283,7 @@ class EndpointFactory:
                 'get': {
                     'description': 'Returns a json describing dataset.',
                     'summary': 'Json about dataset.',
-                    'operationId': 'about_dataset',
+                    'operationId': 'about_dataset' + build_tag,
                     'parameters': [],
                     'responses': {
                         '200': {
@@ -301,7 +310,7 @@ class EndpointFactory:
                 'get': {
                     'description': f'Returns `node` matching `curie`.',
                     'summary': f'Find `node` by `curie`.',
-                    'operationId': f'get_source_node_by_curie',
+                    'operationId': f'get_source_node_by_curie' + build_tag,
                     'parameters': [
                         {
                             'name': 'node_type',
@@ -345,7 +354,7 @@ class EndpointFactory:
                     f'type`.',
                     'summary': f'Get one hop results from source type to target type. Note: Please refer'
                     f' to `graph/schema` endpoint output to determine what target goes with a source',
-                    'operationId': f'get_one_hop_source_node_type_to_target_node_type',
+                    'operationId': f'get_one_hop_source_node_type_to_target_node_type' + build_tag,
                     'parameters': [
                         {
                             'name': 'source_node_type',
@@ -400,7 +409,8 @@ class EndpointFactory:
                     'description': 'Returns an object where outer keys represent source types with second level keys as '
                                    'targets. And the values of the second level keys is the type of possible edge types'
                                    'that connect these concepts.',
-                    'operationId': 'get_graph_schema',
+                    'operationId': 'get_graph_schema' + build_tag,
+                    'summary': 'We recommend using `predicates` endpoint, as support for this will be discontinued.',
                     'parameters': [],
                     'responses': {
                         '200': {
@@ -423,11 +433,13 @@ class EndpointFactory:
             }
             paths['/predicates'] = {
                 'get': {
+                    'tags': ['translator'],
                     'description': 'Returns an object where outer keys represent source types with second level keys '
                                    'as '
                                    'targets. And the values of the second level keys is the type of possible edge types'
                                    'that connect these concepts.',
-                    'operationId': 'get_predicates',
+                    'operationId': 'get_predicates' + build_tag,
+                    'summary': 'Get the list of available predicates.',
                     'parameters': [],
                     'responses': {
                         '200': {
@@ -456,7 +468,7 @@ class EndpointFactory:
                 'post': {
                     'summary': 'Run cypher query.',
                     'description': 'Runs cypher query against the Neo4j instance, and returns an equivalent '
-                                   'response exepected from a Neo4j HTTP endpoint '
+                                   'response expected from a Neo4j HTTP endpoint '
                                    '(https://neo4j.com/docs/rest-docs/current/).',
                     'requestBody': {
                         'description': 'Cypher query.',
@@ -470,7 +482,6 @@ class EndpointFactory:
                                 }
                             }
                         },
-                        'allowEmptyValue': False,
                         'required': True
                     },
                     'responses': {
@@ -518,9 +529,12 @@ class EndpointFactory:
 
             paths['/reasonerapi'] = {
                  'get': {
+                     'deprecated': True,
                      'description': 'Returns a list of question templates '
                                     'that can be used to query this plater instance/',
-                     'operationId': 'get_question_templates',
+                     'operationId': 'get_question_templates' + build_tag,
+                     'summary': 'Get list of one hop TrAPI questions possible to ask.(Please use `query` endpoint as '
+                                'support might discontinue).',
                      'parameters': [],
                      'responses': {
                          '200': {
@@ -538,7 +552,8 @@ class EndpointFactory:
                  },
                 'post': {
                     'description': 'Given a question graph return question graph plus answers.',
-                    'operationId': 'post_question',
+                    'operationId': 'post_question' + build_tag,
+                    'summary': 'post a TrAPI query graph. (Please use `query` endpoint as support might discontinue).',
                     'requestBody': {
                         'description': 'Reasoner api question.',
                         'content': {
@@ -549,7 +564,39 @@ class EndpointFactory:
                                 }
                             }
                         },
-                        'allowEmptyValue': False,
+                        'required': True
+                    },
+                    'responses': {
+                        '200': {
+                            'description': 'OK',
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'example': answer_eg
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            paths['/query'] = {
+                'post': {
+                    'tags': ['translator'],
+                    'description': 'Given a question graph return question graph plus answers.',
+                    'operationId': 'post_question_query' + build_tag,
+                    'summary': 'Post a TrAPI query graph and get back answers.',
+                    'requestBody': {
+                        'description': 'Reasoner api question.',
+                        'content': {
+                            'application/json': {
+                                'schema': {
+                                    'type': 'object',
+                                    'example': example_question
+                                }
+                            }
+                        },
                         'required': True
                     },
                     'responses': {
@@ -568,13 +615,13 @@ class EndpointFactory:
                 }
             }
 
-
             paths['/simple_spec'] = {
                 'get': {
                     'description': 'Returns a list of available predicates when choosing a single source or target '
                                    'curie. Calling this endpoint with no query parameters will return all '
                                    'possible hops for all types.',
-                    'operationId': 'get_simple_spec',
+                    'operationId': 'get_simple_spec' + build_tag,
+                    'summary': 'query about predicates available by sending in a curie.',
                     'parameters': [{
                             'name': 'source',
                             'in': 'query',
@@ -618,7 +665,8 @@ class EndpointFactory:
             paths['/graph/summary'] = {
                 'get': {
                     'description': 'Returns summary of the graph',
-                    'operationId': 'get_graph_summary',
+                    'operationId': 'get_graph_summary' + build_tag,
+                    'summary': 'schema summary of the the graph',
                     'parameters': [],
                     'responses': {
                         '200': {
@@ -745,7 +793,8 @@ class EndpointFactory:
                 'post': {
                     'description': 'Given a reasonerAPI graph add support edges for any nodes linked in result '
                                    'bindings.',
-                    'operationId': 'post_reasoner_api_graph',
+                    'operationId': 'post_reasoner_api_graph_overlay' + build_tag,
+                    'summary': 'Overlay results with available connections between each node.',
                     'requestBody': {
                         'description': 'Reasoner api graph.',
                         'content': {
@@ -756,7 +805,6 @@ class EndpointFactory:
                                 }
                             }
                         },
-                        'allowEmptyValue': False,
                         'required': True
                     },
                     'responses': {
@@ -778,12 +826,13 @@ class EndpointFactory:
             # Add build tag to all the paths
             for path in paths:
                 for method in paths[path]:
-                    paths[path][method]['tags'] = [{'name': build_tag}]
+                    paths[path][method]['tags'] = paths[path][method].get('tags', []) + [build_tag]
 
             schema = {
                 'openapi': '3.0.2',
                 'info': {
                     'title': f'PLATER - {build_tag}',
+                    'vesion': '2.0'
                 },
                 'paths': paths
             }
@@ -910,6 +959,20 @@ class EndpointFactory:
             else:
                 return await post_handler(request)
         return Route('/reasonerapi', wrapper, methods=['GET', 'POST'])
+
+    def create_query_api_endpoint(self):
+        graph_interface = self.graph_interface
+
+        async def post_handler(request: Request) -> JSONResponse:
+            try:
+                request_json = await request.json()
+                question = Question(request_json)
+            except Exception as e:
+                return JSONResponse({"Error": f"{str(type(e))} - {e}"}, 400)
+            response = await question.answer(graph_interface)
+            return JSONResponse(response)
+
+        return Route('/query', post_handler, methods=['POST'])
 
     def create_graph_summary_api_endpoint(self):
         async def get_handler(request: Request) -> JSONResponse:

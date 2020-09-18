@@ -41,7 +41,12 @@ class Automat:
             'openapi': '3.0.2',
             'info': {
                 'title': f'Automat',
+                'version': '2.0',
+                'termsOfService': 'http://loading',
             },
+            'servers': [
+                {'url': self.config.get('AUTOMAT_SERVER_URL', 'https://automat.renci.org')}
+            ],
             'paths': {}
         }
         server_status = self.registry.get_registry()
@@ -70,7 +75,8 @@ class Automat:
             'get': {
                 'description': 'Returns list of available PLATER instances.'
                                'An entry from this list can be a prefix to route requests to specific PLATER backend',
-                'operationId': 'get_question_templates',
+                'operationId': 'get_list_of_platers',
+                'summary': 'List of platers available',
                 'parameters': [],
                 'tags': ['automat'],
                 'responses': {
