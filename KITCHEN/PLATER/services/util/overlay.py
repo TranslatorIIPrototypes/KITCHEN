@@ -24,11 +24,16 @@ class Overlay:
                            for start in range(0, len(reasoner_graph[Question.ANSWERS_KEY]), chunk_size)]
         for answer in chunked_answers:
             # 3. filter out kg ids
-            all_kg_nodes = set(map(lambda node_binding: node_binding[Question.KG_ID_KEY],
-                                   # 2. merge them into single array
-                                   reduce(lambda a, b: a + b,
-                                          # 1. get node bindings from all answers
-                                          map(lambda ans: ans[Question.NODE_BINDINGS_KEY], answer), [])))
+            all_kg_nodes = set(
+                reduce(lambda a, b: a + b,
+                       map(lambda node_binding: node_binding[Question.KG_ID_KEY]
+                       if isinstance(node_binding[Question.KG_ID_KEY], list)
+                       # 3. convert every thing to array and reduce
+                       else [node_binding[Question.KG_ID_KEY]],
+                           # 2. merge them into single array
+                           reduce(lambda a, b: a + b,
+                                  # 1. get node bindings from all answers
+                                  map(lambda ans: ans[Question.NODE_BINDINGS_KEY], answer), [])), []))
             # fun part summon APOC
             if self.graph_interface.supports_apoc():
                 all_kg_nodes = list(all_kg_nodes)
@@ -38,7 +43,12 @@ class Overlay:
                 for ans in answer:
                     support_id_suffix = 0
                     node_bindings = ans[Question.NODE_BINDINGS_KEY]
-                    ans_all_node_ids = set(map(lambda x: x[Question.KG_ID_KEY], node_bindings))
+                    ans_all_node_ids = set(
+                        reduce(lambda a, b: a + b,
+                               map(lambda x: x[Question.KG_ID_KEY]
+                               if isinstance(x[Question.KG_ID_KEY], list)
+                               else [x[Question.KG_ID_KEY]]
+                                   , node_bindings), []))
                     for node_id in ans_all_node_ids:
                         other_nodes = ans_all_node_ids.difference(set(node_id))
                         # lookup current node in apoc_result
