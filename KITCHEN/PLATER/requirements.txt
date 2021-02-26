@@ -1,5 +1,5 @@
 aiofiles==0.4.0
-aiohttp==3.6.2
+aiohttp==3.7.4
 coverage
 pyaml==20.3.1
 pytest==5.4.1
